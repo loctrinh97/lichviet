@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../model/event_model.dart';
 import '../../services/lunar_calendar.dart';
 import '../../services/astrology.dart';
 import '../../state/app_state.dart';
@@ -337,8 +338,16 @@ class _ProfileTabState extends ConsumerState<ProfileTab> {
   }
 
   void _showSyncedEvents(BuildContext context, AppState s, LvTheme t) {
-    final events = [...s.gcalEvents]
+    final today = DateTime.now();
+    final todayKey = EventModel.dateKey(today);
+
+    final upcoming = [...s.gcalEvents.where((e) => e.date.compareTo(todayKey) >= 0)]
       ..sort((a, b) => a.date.compareTo(b.date));
+    final past = [...s.gcalEvents.where((e) => e.date.compareTo(todayKey) < 0)]
+      ..sort((a, b) => b.date.compareTo(a.date)); // newest past first
+
+    // Merge: upcoming first, then past
+    final events = [...upcoming, ...past];
 
     showModalBottomSheet(
       context: context,
@@ -393,31 +402,55 @@ class _ProfileTabState extends ConsumerState<ProfileTab> {
                         separatorBuilder: (_, __) => Divider(color: t.divider, height: 1),
                         itemBuilder: (_, i) {
                           final e = events[i];
+                          final isPast = e.date.compareTo(todayKey) < 0;
+                          final barColor = isPast ? t.dim : LvColors.event;
                           final parts = e.date.split('-');
                           final dateLabel = parts.length == 3
                               ? '${parts[2]}/${parts[1]}/${parts[0]}'
                               : e.date;
-                          return Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 11),
-                            child: Row(children: [
-                              Container(width: 3, height: 36,
-                                decoration: BoxDecoration(
-                                  color: LvColors.event,
-                                  borderRadius: BorderRadius.circular(2),
-                                )),
-                              const SizedBox(width: 12),
-                              Expanded(child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(e.title,
-                                      style: TextStyle(fontSize: 14, color: t.text),
-                                      maxLines: 2, overflow: TextOverflow.ellipsis),
-                                  const SizedBox(height: 2),
-                                  Text(dateLabel,
-                                      style: TextStyle(fontSize: 12, color: t.muted)),
-                                ],
-                              )),
-                            ]),
+                          // Section header
+                          final showHeader = (i == 0 && upcoming.isNotEmpty) ||
+                              (i == upcoming.length && past.isNotEmpty);
+                          final headerLabel = i == 0 && upcoming.isNotEmpty
+                              ? 'SẮP TỚI'
+                              : 'ĐÃ QUA';
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (showHeader) ...[
+                                if (i > 0) const SizedBox(height: 8),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 8),
+                                  child: Text(headerLabel,
+                                      style: TextStyle(fontSize: 11, letterSpacing: 1.2, color: t.muted)),
+                                ),
+                              ],
+                              Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 11),
+                                child: Row(children: [
+                                  Container(width: 3, height: 36,
+                                    decoration: BoxDecoration(
+                                      color: barColor,
+                                      borderRadius: BorderRadius.circular(2),
+                                    )),
+                                  const SizedBox(width: 12),
+                                  Expanded(child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(e.title,
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: isPast ? t.muted : t.text,
+                                          ),
+                                          maxLines: 2, overflow: TextOverflow.ellipsis),
+                                      const SizedBox(height: 2),
+                                      Text(dateLabel,
+                                          style: TextStyle(fontSize: 12, color: t.dim)),
+                                    ],
+                                  )),
+                                ]),
+                              ),
+                            ],
                           );
                         },
                       ),
