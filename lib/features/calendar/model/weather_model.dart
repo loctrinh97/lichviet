@@ -6,12 +6,7 @@ class WeatherCity {
 
   const WeatherCity({required this.name, required this.admin, required this.lat, required this.lon});
 
-  String get displayName {
-    if (name == 'Vị trí của bạn') {
-      return admin.isNotEmpty ? 'Vị trí của bạn – $admin' : 'Vị trí của bạn';
-    }
-    return admin.isNotEmpty ? '$name, $admin' : name;
-  }
+  String get displayName => admin.isNotEmpty ? '$name, $admin' : name;
 }
 
 class WeatherData {
