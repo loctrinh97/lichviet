@@ -8,6 +8,7 @@ import 'tabs/weather_tab.dart';
 import 'tabs/astrology_tab.dart';
 import 'tabs/profile_tab.dart';
 import 'widgets/detail_sheet.dart';
+import 'widgets/onboarding_overlay.dart';
 import 'widgets/splash_screen.dart';
 
 class HomeScreen extends ConsumerWidget {
@@ -55,6 +56,11 @@ class HomeScreen extends ConsumerWidget {
           if (state.splashVisible)
             Positioned.fill(
               child: SplashOverlay(theme: t, visible: state.splashVisible),
+            ),
+
+          if (state.obVisible)
+            Positioned.fill(
+              child: OnboardingOverlay(theme: t),
             ),
         ],
       ),

@@ -42,6 +42,7 @@ class AppViewModel extends BaseViewModel<AppState> {
     });
   }
 
+  static const _prefObDone      = 'ob_done';
   static const _prefGoogleEmail = 'google_email';
   static const _prefTheme       = 'app_theme';
   static const _prefName        = 'profile_name';
@@ -57,6 +58,13 @@ class AppViewModel extends BaseViewModel<AppState> {
     // Restore theme
     final theme = prefs.getString(_prefTheme);
     if (theme != null) safeSetState(state.copyWith(theme: theme));
+
+    // Show onboarding if first launch
+    final obDone = prefs.getBool(_prefObDone) ?? false;
+    if (!obDone) {
+      safeSetState(state.copyWith(obVisible: true));
+      return; // don't restore Google session until onboarding is done
+    }
 
     // Restore profile
     final name       = prefs.getString(_prefName) ?? '';
@@ -141,6 +149,33 @@ class AppViewModel extends BaseViewModel<AppState> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_prefTheme, theme);
   }
+
+  Future<void> obDone() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_prefObDone, true);
+    _saveProfile();
+    safeSetState(state.copyWith(obVisible: false));
+    // Now restore Google session if any
+    final savedEmail = prefs.getString(_prefGoogleEmail);
+    if (savedEmail != null) {
+      safeSetState(state.copyWith(
+        googleEmail: () => savedEmail,
+        syncMsg: 'Đã kết nối · Ấn "Đồng bộ ngay" để cập nhật',
+      ));
+      try {
+        final account = await DriveService.signInSilently();
+        if (account != null) await _runSync(account);
+      } catch (_) {}
+    }
+  }
+
+  Future<void> obSkip() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_prefObDone, true);
+    safeSetState(state.copyWith(obVisible: false));
+  }
+
+  void replayOb() => safeSetState(state.copyWith(obVisible: true));
 
   void replaySplash() {
     safeSetState(state.copyWith(splashVisible: true));

@@ -31,6 +31,7 @@ class AppState {
   final String syncMsg;
   final String? googleEmail;
   final bool splashVisible;
+  final bool obVisible;
 
   const AppState({
     this.theme = 'dark',
@@ -57,6 +58,7 @@ class AppState {
     this.syncMsg = 'Chưa kết nối. Dữ liệu chỉ ở máy này.',
     this.googleEmail,
     this.splashVisible = true,
+    this.obVisible = false,
   });
 
   AppState copyWith({
@@ -84,6 +86,7 @@ class AppState {
     String? syncMsg,
     String? Function()? googleEmail,
     bool? splashVisible,
+    bool? obVisible,
   }) {
     return AppState(
       theme: theme ?? this.theme,
@@ -110,6 +113,7 @@ class AppState {
       syncMsg: syncMsg ?? this.syncMsg,
       googleEmail: googleEmail != null ? googleEmail() : this.googleEmail,
       splashVisible: splashVisible ?? this.splashVisible,
+      obVisible: obVisible ?? this.obVisible,
     );
   }
 }
