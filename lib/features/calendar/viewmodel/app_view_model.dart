@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:uuid/uuid.dart';
 import '../model/event_model.dart';
@@ -160,9 +161,53 @@ class AppViewModel extends BaseViewModel<AppState> {
     _lookupCity(name);
   }
 
-  void useGeo() {
-    // Flutter doesn't have browser geolocation; show a hint
-    safeSetState(state.copyWith(wxErr: 'Dùng ô tìm thành phố để tra thời tiết.'));
+  Future<void> useGeo() async {
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        safeSetState(state.copyWith(wxErr: 'Dịch vụ vị trí bị tắt. Vui lòng bật trong cài đặt.'));
+        return;
+      }
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          safeSetState(state.copyWith(wxErr: 'Không được cấp quyền truy cập vị trí.'));
+          return;
+        }
+      }
+      if (permission == LocationPermission.deniedForever) {
+        safeSetState(state.copyWith(wxErr: 'Quyền vị trí bị từ chối vĩnh viễn. Vào Cài đặt để cấp lại.'));
+        return;
+      }
+      safeSetState(state.copyWith(wxErr: ''));
+      final pos = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(accuracy: LocationAccuracy.low),
+      );
+      await _reverseGeocode(pos.latitude, pos.longitude);
+    } catch (_) {
+      safeSetState(state.copyWith(wxErr: 'Không lấy được vị trí. Thử lại sau.'));
+    }
+  }
+
+  Future<void> _reverseGeocode(double lat, double lon) async {
+    try {
+      final uri = Uri.parse(
+          'https://geocoding-api.open-meteo.com/v1/reverse?latitude=$lat&longitude=$lon&language=vi');
+      final r = await http.get(uri);
+      String cityName = 'Vị trí của bạn';
+      String admin = '';
+      if (r.statusCode == 200) {
+        final j = jsonDecode(r.body) as Map<String, dynamic>;
+        cityName = (j['name'] as String?) ?? cityName;
+        admin = (j['admin1'] as String?) ?? '';
+      }
+      final city = WeatherCity(name: cityName, admin: admin, lat: lat, lon: lon);
+      await _fetchWeather(city);
+    } catch (_) {
+      final city = WeatherCity(name: 'Vị trí của bạn', admin: '', lat: lat, lon: lon);
+      await _fetchWeather(city);
+    }
   }
 
   Future<void> _lookupCity(String name) async {

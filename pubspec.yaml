@@ -41,6 +41,9 @@ dependencies:
   # Environment config
   flutter_dotenv: ^6.0.1
 
+  # Location
+  geolocator: ^13.0.1
+
   # UI utilities
   shimmer_animation: ^2.2.1
   flutter_easyloading: ^3.0.5
