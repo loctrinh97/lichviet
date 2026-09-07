@@ -38,14 +38,14 @@ class CalendarTab extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text('Năm ${todayCc.year}',
-                        style: TextStyle(fontSize: 11, letterSpacing: 1.2, color: t.muted)),
+                        style: TextStyle(fontSize: 13, letterSpacing: 1.2, color: t.muted)),
                     const SizedBox(height: 4),
                     Text('Tháng ${vm0 + 1} / $vy',
                         style: TextStyle(
-                            fontWeight: FontWeight.w500, fontSize: 27, color: t.text, height: 1.05, letterSpacing: -0.5)),
+                            fontWeight: FontWeight.w500, fontSize: 30, color: t.text, height: 1.05, letterSpacing: -0.5)),
                     const SizedBox(height: 5),
                     Text('Tháng ${alFirst.month} – ${alLast.month} âm lịch',
-                        style: TextStyle(fontSize: 13, color: t.muted)),
+                        style: TextStyle(fontSize: 15, color: t.muted)),
                   ],
                 ),
               ),
@@ -108,7 +108,7 @@ class _NavButtons extends StatelessWidget {
           border: Border.all(color: t.accent),
         ),
         alignment: Alignment.center,
-        child: Text(label, style: TextStyle(color: t.accent, fontWeight: FontWeight.w500, fontSize: 13)),
+        child: Text(label, style: TextStyle(color: t.accent, fontWeight: FontWeight.w500, fontSize: 15)),
       ),
     );
   }
@@ -156,13 +156,13 @@ class _CalendarGrid extends StatelessWidget {
             final isWe = e.key >= 5;
             return Center(
               child: Text(e.value,
-                  style: TextStyle(fontSize: 11, letterSpacing: 0.6, color: isWe ? t.weekend : t.muted)),
+                  style: TextStyle(fontSize: 13, letterSpacing: 0.6, color: isWe ? t.weekend : t.muted)),
             );
           }).toList(),
         ),
         GridView.count(
           crossAxisCount: 7, shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
-          childAspectRatio: 0.82, mainAxisSpacing: 3, crossAxisSpacing: 3,
+          childAspectRatio: 1.2, mainAxisSpacing: 2, crossAxisSpacing: 3,
           children: cells.map((c) => _CalCell(cell: c, theme: t, onTap: () => vm.selectDate(c.k))).toList(),
         ),
       ],
@@ -200,8 +200,33 @@ class _CalCell extends StatelessWidget {
       solColor = t.weekend;
     }
 
-    final hasLeLon = c.le.isNotEmpty && LunarCalendar.leLon.contains(c.le.first.name);
+    final hasHoliday = c.le.isNotEmpty;
+    final hasEvent = c.evs.isNotEmpty;
     final isFirst15 = c.al.day == 1 || c.al.day == 15;
+
+    FontWeight solWeight = FontWeight.w500;
+    if (!c.inMonth) {
+      solColor = t.dim;
+    } else if (hasHoliday) {
+      solColor = LvColors.holiday;
+      solWeight = FontWeight.w700;
+    } else if (c.weekend) {
+      solColor = t.weekend;
+    } else if (hasEvent) {
+      solColor = LvColors.event;
+      solWeight = FontWeight.w700;
+    }
+
+    final Color lunarColor;
+    if (!c.inMonth) {
+      lunarColor = t.dim.withValues(alpha: 0.6);
+    } else if (isFirst15) {
+      lunarColor = LvColors.lunar;
+    } else if (hasEvent) {
+      lunarColor = LvColors.event.withValues(alpha: 0.7);
+    } else {
+      lunarColor = t.dim.withValues(alpha: 0.9);
+    }
 
     return GestureDetector(
       onTap: onTap,
@@ -218,36 +243,16 @@ class _CalCell extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text('${c.d.day}',
-                  style: TextStyle(fontWeight: FontWeight.w500, fontSize: 15, letterSpacing: -0.2, color: solColor, height: 1)),
-              const SizedBox(height: 1),
+                  style: TextStyle(fontWeight: solWeight, fontSize: 18, letterSpacing: -0.2, color: solColor, height: 1)),
+              const SizedBox(height: 2),
               Text(
                 c.al.day == 1 ? '1/${c.al.month}' : '${c.al.day}',
-                style: TextStyle(fontSize: 8.5, height: 1,
-                    color: isFirst15 ? t.muted : t.dim.withValues(alpha: 0.9)),
-              ),
-              const SizedBox(height: 3),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (c.le.isNotEmpty)
-                    Container(
-                      width: 5, height: 5,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: hasLeLon ? t.accent : t.accent.withValues(alpha: 0.5),
-                      ),
-                    ),
-                  if (c.le.isEmpty && isFirst15)
-                    Container(
-                      width: 5, height: 5,
-                      decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: t.dim)),
-                    ),
-                  if (c.evs.isNotEmpty) ...[
-                    if (c.le.isNotEmpty || isFirst15) const SizedBox(width: 3),
-                    Container(width: 9, height: 2,
-                        decoration: BoxDecoration(borderRadius: BorderRadius.circular(2), color: LvColors.accent300)),
-                  ],
-                ],
+                style: TextStyle(
+                  fontSize: 12,
+                  height: 1,
+                  color: lunarColor,
+                  fontWeight: isFirst15 ? FontWeight.w700 : FontWeight.w400,
+                ),
               ),
             ],
           ),
@@ -267,17 +272,21 @@ class _Legend extends StatelessWidget {
     return Wrap(
       spacing: 16, runSpacing: 8,
       children: [
-        _item(Container(width: 5, height: 5, decoration: BoxDecoration(shape: BoxShape.circle, color: t.accent)), 'Ngày lễ', t),
-        _item(Container(width: 5, height: 5, decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: t.dim))), 'Mùng 1 / Rằm', t),
-        _item(Container(width: 9, height: 2, decoration: BoxDecoration(borderRadius: BorderRadius.circular(2), color: LvColors.accent300)), 'Sự kiện', t),
+        _item(LvColors.holiday, 'Ngày lễ', t),
+        _item(LvColors.lunar, 'Mùng 1 / Rằm', t),
+        _item(LvColors.event, 'Sự kiện', t),
       ],
     );
   }
 
-  Widget _item(Widget dot, String label, LvTheme t) {
+  Widget _item(Color color, String label, LvTheme t) {
     return Row(mainAxisSize: MainAxisSize.min, children: [
-      dot, const SizedBox(width: 6),
-      Text(label, style: TextStyle(fontSize: 11.5, color: t.muted)),
+      Container(
+        width: 12, height: 12,
+        decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(3)),
+      ),
+      const SizedBox(width: 6),
+      Text(label, style: TextStyle(fontSize: 13.5, color: t.muted)),
     ]);
   }
 }
@@ -296,7 +305,7 @@ class _UpcomingSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('SẮP TỚI', style: TextStyle(fontSize: 11, letterSpacing: 1.2, color: t.muted)),
+        Text('SẮP TỚI', style: TextStyle(fontSize: 13, letterSpacing: 1.2, color: t.muted)),
         const SizedBox(height: 12),
         ...items.map((s) => _UpcomingItem(item: s, theme: t, onTap: () => vm.selectDate(s.dateKey))),
       ],
@@ -305,20 +314,27 @@ class _UpcomingSection extends StatelessWidget {
 
   List<_UpcomingData> _buildUpcoming() {
     final items = <_UpcomingData>[];
-    for (int i = 0; i < 90 && items.length < 4; i++) {
+    for (int i = 0; i < 30; i++) {
       final d = DateTime(now.year, now.month, now.day + i);
       final k = EventModel.dateKey(d);
       final al = LunarCalendar.solar2lunar(d.day, d.month, d.year);
       final le = LunarCalendar.holidays(d, al);
       final evs = state.events.where((e) => !e.deleted && e.date == k).toList();
-      final name = le.isNotEmpty ? le.first.name : (evs.isNotEmpty ? evs.first.title : null);
-      if (name == null) continue;
+      final isFirst15 = al.day == 1 || al.day == 15;
+
+      final names = <String>[];
+      if (le.isNotEmpty) names.add(le.first.name);
+      if (evs.isNotEmpty) names.add(evs.first.title);
+      if (isFirst15 && le.isEmpty) names.add(al.day == 1 ? 'Mùng 1' : 'Ngày Rằm');
+
+      if (names.isEmpty) continue;
+      final dayLabel = i == 0 ? 'Hôm nay' : i == 1 ? 'Ngày mai' : 'Còn $i ngày';
       items.add(_UpcomingData(
         dateKey: k,
         day: '${d.day}',
         month: 'Th${d.month}',
-        name: name,
-        sub: (i == 0 ? 'Hôm nay' : i == 1 ? 'Ngày mai' : 'Còn $i ngày') + ' · Âm ${al.day}/${al.month}',
+        name: names.join(' · '),
+        sub: '$dayLabel · Âm ${al.day}/${al.month}',
       ));
     }
     return items;
@@ -342,19 +358,20 @@ class _UpcomingItem extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
+        color: Colors.transparent,
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
         child: Row(
           children: [
             SizedBox(width: 38, child: Column(children: [
-              Text(item.day, style: TextStyle(fontWeight: FontWeight.w500, fontSize: 17, color: t.text, height: 1)),
+              Text(item.day, style: TextStyle(fontWeight: FontWeight.w500, fontSize: 19, color: t.text, height: 1)),
               const SizedBox(height: 2),
-              Text(item.month, style: TextStyle(fontSize: 10.5, color: t.muted)),
+              Text(item.month, style: TextStyle(fontSize: 12.5, color: t.muted)),
             ])),
             const SizedBox(width: 12),
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(item.name, style: TextStyle(fontSize: 14, color: t.text)),
+              Text(item.name, style: TextStyle(fontSize: 16, color: t.text)),
               const SizedBox(height: 1),
-              Text(item.sub, style: TextStyle(fontSize: 11.5, color: t.muted)),
+              Text(item.sub, style: TextStyle(fontSize: 13.5, color: t.muted)),
             ])),
             Icon(Icons.chevron_right, color: t.dim, size: 16),
           ],

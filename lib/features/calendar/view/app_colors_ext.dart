@@ -20,6 +20,11 @@ class LvColors {
   static const accent600 = Color(0xFF796CBF);
   static const accent700 = Color(0xFF5D5294);
 
+  // Semantic
+  static const holiday  = Color(0xFFE84545); // ngày lễ — đỏ
+  static const lunar    = Color(0xFFE8A020); // mùng 1 / rằm — vàng
+  static const event    = Color(0xFF27AE82); // sự kiện — xanh lá
+
   // Neutral
   static const neutral300 = Color(0xFFCFD3E5);
   static const neutral500 = Color(0xFF9397AB);

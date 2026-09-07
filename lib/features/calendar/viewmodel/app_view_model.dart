@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
@@ -15,6 +16,7 @@ final appViewModelProvider = StateNotifierProvider<AppViewModel, AppState>((ref)
 
 class AppViewModel extends BaseViewModel<AppState> {
   final _uuid = const Uuid();
+  Timer? _suggestionTimer;
 
   AppViewModel(DateTime now)
       : super(AppState(
@@ -26,8 +28,7 @@ class AppViewModel extends BaseViewModel<AppState> {
   }
 
   void _init(DateTime now) {
-    final events = _seedEvents(now);
-    safeSetState(state.copyWith(events: events));
+    safeSetState(state.copyWith(events: const []));
     WidgetService.updateWidget();
     _fetchWeather(const WeatherCity(name: 'Hà Nội', admin: '', lat: 21.0285, lon: 105.8542));
 
@@ -36,23 +37,6 @@ class AppViewModel extends BaseViewModel<AppState> {
       safeSetState(state.copyWith(splashVisible: false));
     });
   }
-
-  EventModel _makeEvent(DateTime now, int off, String title) {
-    final d = DateTime(now.year, now.month, now.day + off);
-    return EventModel(
-      id: _uuid.v4(),
-      date: EventModel.dateKey(d),
-      title: title,
-      updatedAt: DateTime.now().millisecondsSinceEpoch - off * 1000,
-    );
-  }
-
-  List<EventModel> _seedEvents(DateTime now) => [
-    _makeEvent(now, 0, 'Họp nhóm 9:00'),
-    _makeEvent(now, 2, 'Sinh nhật mẹ'),
-    _makeEvent(now, 5, 'Đi khám định kỳ'),
-    _makeEvent(now, 11, 'Hạn đóng học phí'),
-  ];
 
   List<EventModel> eventsOn(String dateKey) =>
       state.events.where((e) => !e.deleted && e.date == dateKey).toList();
@@ -131,11 +115,48 @@ class AppViewModel extends BaseViewModel<AppState> {
 
   // ── Weather ──
 
-  void setCityDraft(String v) => safeSetState(state.copyWith(cityDraft: v));
+  void setCityDraft(String v) {
+    safeSetState(state.copyWith(cityDraft: v));
+    _suggestionTimer?.cancel();
+    if (v.trim().isEmpty) {
+      safeSetState(state.copyWith(citySuggestions: []));
+      return;
+    }
+    _suggestionTimer = Timer(const Duration(milliseconds: 400), () => _searchSuggestions(v.trim()));
+  }
+
+  Future<void> _searchSuggestions(String name) async {
+    try {
+      final uri = Uri.parse(
+          'https://geocoding-api.open-meteo.com/v1/search?count=5&language=vi&name=${Uri.encodeComponent(name)}');
+      final r = await http.get(uri);
+      if (r.statusCode != 200) return;
+      final j = jsonDecode(r.body) as Map<String, dynamic>;
+      final results = j['results'] as List? ?? [];
+      final suggestions = results.map((g) {
+        final m = g as Map<String, dynamic>;
+        return WeatherCity(
+          name: m['name'] as String,
+          admin: (m['admin1'] as String?) ?? '',
+          lat: (m['latitude'] as num).toDouble(),
+          lon: (m['longitude'] as num).toDouble(),
+        );
+      }).toList();
+      safeSetState(state.copyWith(citySuggestions: suggestions));
+    } catch (_) {}
+  }
+
+  void selectSuggestion(WeatherCity city) {
+    safeSetState(state.copyWith(citySuggestions: [], cityDraft: ''));
+    _fetchWeather(city);
+  }
+
+  void clearSuggestions() => safeSetState(state.copyWith(citySuggestions: []));
 
   void submitCity() {
     final name = state.cityDraft.trim();
     if (name.isEmpty) return;
+    safeSetState(state.copyWith(citySuggestions: []));
     _lookupCity(name);
   }
 

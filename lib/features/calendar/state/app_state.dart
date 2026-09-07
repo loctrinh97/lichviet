@@ -16,6 +16,7 @@ class AppState {
   final String eventDraft;
   final ProfileModel profile;
   final String cityDraft;
+  final List<WeatherCity> citySuggestions;
   final WeatherCity? city;
   final WeatherData? wx;
   final String wxErr;
@@ -38,6 +39,7 @@ class AppState {
     this.eventDraft = '',
     this.profile = const ProfileModel(),
     this.cityDraft = '',
+    this.citySuggestions = const [],
     this.city,
     this.wx,
     this.wxErr = '',
@@ -61,6 +63,7 @@ class AppState {
     String? eventDraft,
     ProfileModel? profile,
     String? cityDraft,
+    List<WeatherCity>? citySuggestions,
     WeatherCity? Function()? city,
     WeatherData? Function()? wx,
     String? wxErr,
@@ -83,6 +86,7 @@ class AppState {
       eventDraft: eventDraft ?? this.eventDraft,
       profile: profile ?? this.profile,
       cityDraft: cityDraft ?? this.cityDraft,
+      citySuggestions: citySuggestions ?? this.citySuggestions,
       city: city != null ? city() : this.city,
       wx: wx != null ? wx() : this.wx,
       wxErr: wxErr ?? this.wxErr,

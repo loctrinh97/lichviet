@@ -20,8 +20,12 @@ class HomeScreen extends ConsumerWidget {
     final isDark = state.theme == 'dark';
     final t = LvColors.of(isDark);
 
-    return Scaffold(
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      behavior: HitTestBehavior.translucent,
+      child: Scaffold(
       backgroundColor: t.bg,
+      resizeToAvoidBottomInset: false,
       body: Stack(
         children: [
           SafeArea(
@@ -54,6 +58,7 @@ class HomeScreen extends ConsumerWidget {
             ),
         ],
       ),
+    ),
     );
   }
 

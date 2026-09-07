@@ -55,8 +55,14 @@ class _WeatherTabState extends ConsumerState<WeatherTab> {
                       Expanded(
                         child: TextField(
                           controller: _ctrl,
-                          onChanged: vm.setCityDraft,
-                          onSubmitted: (_) => vm.submitCity(),
+                          onChanged: (v) {
+                            vm.setCityDraft(v);
+                            if (v != _ctrl.text) _ctrl.text = v;
+                          },
+                          onSubmitted: (_) {
+                            vm.submitCity();
+                            _ctrl.clear();
+                          },
                           decoration: InputDecoration(
                             hintText: 'Tìm thành phố…',
                             hintStyle: TextStyle(color: t.muted, fontSize: 14),
@@ -84,6 +90,50 @@ class _WeatherTabState extends ConsumerState<WeatherTab> {
               ),
             ],
           ),
+
+          // Suggestions dropdown
+          if (state.citySuggestions.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Container(
+              decoration: BoxDecoration(
+                color: t.surface,
+                borderRadius: BorderRadius.circular(LvColors.radiusMd),
+                border: Border.all(color: t.divider),
+              ),
+              child: Column(
+                children: state.citySuggestions.asMap().entries.map((entry) {
+                  final i = entry.key;
+                  final c = entry.value;
+                  return Column(
+                    children: [
+                      if (i > 0) Divider(color: t.divider, height: 1),
+                      GestureDetector(
+                        onTap: () {
+                          vm.selectSuggestion(c);
+                          _ctrl.clear();
+                          FocusScope.of(context).unfocus();
+                        },
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                          child: Row(
+                            children: [
+                              Icon(Icons.location_on_outlined, color: t.muted, size: 15),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(c.displayName,
+                                    style: TextStyle(fontSize: 14, color: t.text)),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                }).toList(),
+              ),
+            ),
+          ],
 
           if (state.wxErr.isNotEmpty) ...[
             const SizedBox(height: 12),

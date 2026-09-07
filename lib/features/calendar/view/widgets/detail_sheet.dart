@@ -118,11 +118,11 @@ class _DetailSheetState extends ConsumerState<DetailSheet> {
               // Can chi grid
               Row(
                 children: [
-                  _InfoBox('Ngày', cc.day, t),
+                  Expanded(child: _InfoBox('Ngày', cc.day, t)),
                   const SizedBox(width: 8),
-                  _InfoBox('Tháng', cc.month, t),
+                  Expanded(child: _InfoBox('Tháng', cc.month, t)),
                   const SizedBox(width: 8),
-                  _InfoBox('Năm', cc.year, t),
+                  Expanded(child: _InfoBox('Năm', cc.year, t)),
                 ],
               ),
               const SizedBox(height: 8),
@@ -157,8 +157,10 @@ class _DetailSheetState extends ConsumerState<DetailSheet> {
                 physics: const NeverScrollableScrollPhysics(),
                 childAspectRatio: 3.5,
                 crossAxisSpacing: 8, mainAxisSpacing: 8,
+                padding: EdgeInsets.zero,
                 children: gioHD.map((g) => Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  alignment: Alignment.center,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(LvColors.radiusMd),
                     border: Border.all(color: t.divider),
@@ -167,9 +169,19 @@ class _DetailSheetState extends ConsumerState<DetailSheet> {
                     crossAxisAlignment: CrossAxisAlignment.baseline,
                     textBaseline: TextBaseline.alphabetic,
                     children: [
-                      Text(g.chi, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14, color: LvColors.accent300)),
+                      Expanded(
+                        flex: 1,
+                        child: Text(g.chi,
+                          textAlign: TextAlign.right,
+                          style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14, color: LvColors.accent300)),
+                      ),
                       const SizedBox(width: 8),
-                      Text(g.frame, style: TextStyle(fontSize: 12, color: t.muted)),
+                      Expanded(
+                        flex: 2,
+                        child: Text(g.frame,
+                          textAlign: TextAlign.left,
+                          style: TextStyle(fontSize: 12, color: t.muted)),
+                      ),
                     ],
                   ),
                 )).toList(),
@@ -177,7 +189,6 @@ class _DetailSheetState extends ConsumerState<DetailSheet> {
 
               const SizedBox(height: 20),
               Text('SỰ KIỆN', style: TextStyle(fontSize: 11, letterSpacing: 1.2, color: t.muted)),
-              const SizedBox(height: 8),
 
               ...events.map((e) => Column(
                 children: [
@@ -269,19 +280,17 @@ class _InfoBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = theme;
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(LvColors.radiusMd),
-          border: Border.all(color: t.divider),
-        ),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(label.toUpperCase(), style: TextStyle(fontSize: 10.5, letterSpacing: 0.8, color: t.muted)),
-          const SizedBox(height: 5),
-          Text(value, style: TextStyle(fontWeight: FontWeight.w500, fontSize: 15, color: t.text)),
-        ]),
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(LvColors.radiusMd),
+        border: Border.all(color: t.divider),
       ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(label.toUpperCase(), style: TextStyle(fontSize: 10.5, letterSpacing: 0.8, color: t.muted)),
+        const SizedBox(height: 5),
+        Text(value, style: TextStyle(fontWeight: FontWeight.w500, fontSize: 15, color: t.text)),
+      ]),
     );
   }
 }

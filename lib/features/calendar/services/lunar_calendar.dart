@@ -94,12 +94,13 @@ class LunarCalendar {
     'Đông chí', 'Tiểu hàn', 'Đại hàn', 'Lập xuân', 'Vũ thuỷ', 'Kinh trập',
   ];
 
-  static final leLon = ['Tết Nguyên Đán', 'Lễ Vu Lan', 'Tết Trung Thu', 'Quốc khánh', 'Giỗ tổ Hùng Vương'];
+  static final leLon = ['Tết Nguyên Đán', 'Lễ Vu Lan', 'Tết Trung Thu', 'Quốc khánh', 'Giỗ tổ Hùng Vương', 'Ngày Văn hóa Việt Nam'];
 
   static final _leDuong = {
     '1-1': 'Tết Dương lịch', '2-14': 'Valentine', '3-8': 'Quốc tế Phụ nữ',
     '4-30': 'Giải phóng miền Nam', '5-1': 'Quốc tế Lao động', '6-1': 'Quốc tế Thiếu nhi',
     '9-2': 'Quốc khánh', '10-20': 'Phụ nữ Việt Nam', '11-20': 'Nhà giáo Việt Nam',
+    '11-24': 'Ngày Văn hóa Việt Nam',
     '12-24': 'Giáng sinh', '12-25': 'Giáng sinh',
   };
 
