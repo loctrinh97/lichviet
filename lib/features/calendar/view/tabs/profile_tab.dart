@@ -305,6 +305,22 @@ class _ProfileTabState extends ConsumerState<ProfileTab> {
                   ),
                   const SizedBox(height: 8),
                   Text(s2.syncMsg, style: TextStyle(fontSize: 11.5, color: t.dim)),
+                  if (s2.gcalEvents.isNotEmpty) ...[
+                    const SizedBox(height: 10),
+                    GestureDetector(
+                      onTap: () => _showSyncedEvents(context, s2, t),
+                      child: Row(children: [
+                        Icon(Icons.calendar_month_outlined, color: t.accent, size: 14),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Xem ${s2.gcalEvents.length} sự kiện đã đồng bộ từ Google Calendar',
+                          style: TextStyle(fontSize: 12.5, color: t.accent),
+                        ),
+                        const SizedBox(width: 4),
+                        Icon(Icons.chevron_right, color: t.accent, size: 14),
+                      ]),
+                    ),
+                  ],
                 ],
               ),
             );
@@ -316,6 +332,99 @@ class _ProfileTabState extends ConsumerState<ProfileTab> {
             style: TextStyle(fontSize: 11.5, height: 1.65, color: t.dim),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showSyncedEvents(BuildContext context, AppState s, LvTheme t) {
+    final events = [...s.gcalEvents]
+      ..sort((a, b) => a.date.compareTo(b.date));
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => DraggableScrollableSheet(
+        initialChildSize: 0.6,
+        minChildSize: 0.4,
+        maxChildSize: 0.92,
+        expand: false,
+        builder: (_, ctrl) => Container(
+          decoration: BoxDecoration(
+            color: t.bg,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
+            border: Border(top: BorderSide(color: t.divider)),
+          ),
+          child: Column(
+            children: [
+              const SizedBox(height: 12),
+              Center(child: Container(
+                width: 38, height: 4,
+                decoration: BoxDecoration(color: t.divider, borderRadius: BorderRadius.circular(9999)),
+              )),
+              const SizedBox(height: 16),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(children: [
+                  Icon(Icons.calendar_month, color: LvColors.event, size: 18),
+                  const SizedBox(width: 8),
+                  Text('Sự kiện Google Calendar',
+                      style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16, color: t.text)),
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: LvColors.event.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text('${events.length}',
+                        style: const TextStyle(fontSize: 12, color: LvColors.event, fontWeight: FontWeight.w600)),
+                  ),
+                ]),
+              ),
+              const SizedBox(height: 12),
+              Expanded(
+                child: events.isEmpty
+                    ? Center(child: Text('Không có sự kiện', style: TextStyle(color: t.muted)))
+                    : ListView.separated(
+                        controller: ctrl,
+                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
+                        itemCount: events.length,
+                        separatorBuilder: (_, __) => Divider(color: t.divider, height: 1),
+                        itemBuilder: (_, i) {
+                          final e = events[i];
+                          final parts = e.date.split('-');
+                          final dateLabel = parts.length == 3
+                              ? '${parts[2]}/${parts[1]}/${parts[0]}'
+                              : e.date;
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 11),
+                            child: Row(children: [
+                              Container(width: 3, height: 36,
+                                decoration: BoxDecoration(
+                                  color: LvColors.event,
+                                  borderRadius: BorderRadius.circular(2),
+                                )),
+                              const SizedBox(width: 12),
+                              Expanded(child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(e.title,
+                                      style: TextStyle(fontSize: 14, color: t.text),
+                                      maxLines: 2, overflow: TextOverflow.ellipsis),
+                                  const SizedBox(height: 2),
+                                  Text(dateLabel,
+                                      style: TextStyle(fontSize: 12, color: t.muted)),
+                                ],
+                              )),
+                            ]),
+                          );
+                        },
+                      ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
