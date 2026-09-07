@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 import '../services/drive_service.dart';
 import '../model/event_model.dart';
+import '../model/profile_model.dart';
 import '../model/weather_model.dart';
 import '../services/widget_service.dart';
 import '../state/app_state.dart';
@@ -34,7 +35,7 @@ class AppViewModel extends BaseViewModel<AppState> {
     safeSetState(state.copyWith(events: const []));
     WidgetService.updateWidget();
     _fetchWeather(const WeatherCity(name: 'Hà Nội', admin: '', lat: 21.0285, lon: 105.8542));
-    _restoreGoogleSession();
+    _restoreSession();
 
     Future.delayed(const Duration(milliseconds: 2500), () {
       safeSetState(state.copyWith(splashVisible: false));
@@ -42,25 +43,56 @@ class AppViewModel extends BaseViewModel<AppState> {
   }
 
   static const _prefGoogleEmail = 'google_email';
+  static const _prefName        = 'profile_name';
+  static const _prefBirthDate   = 'profile_birth_date';
+  static const _prefBirthTime   = 'profile_birth_time';
+  static const _prefGender      = 'profile_gender';
+  static const _prefNameEdited  = 'profile_name_edited';
+  static const _prefBirthEdited = 'profile_birth_edited';
 
-  Future<void> _restoreGoogleSession() async {
+  Future<void> _restoreSession() async {
     final prefs = await SharedPreferences.getInstance();
+
+    // Restore profile
+    final name       = prefs.getString(_prefName) ?? '';
+    final birthDate  = prefs.getString(_prefBirthDate) ?? '';
+    final birthTime  = prefs.getString(_prefBirthTime) ?? '';
+    final gender     = prefs.getString(_prefGender) ?? 'Nam';
+    final nameEdited = prefs.getBool(_prefNameEdited) ?? false;
+    final birthEdited = prefs.getBool(_prefBirthEdited) ?? false;
+    safeSetState(state.copyWith(
+      profile: ProfileModel(
+        name: name,
+        birthDate: birthDate,
+        birthTime: birthTime,
+        gender: gender,
+        nameEdited: nameEdited,
+        birthDateEdited: birthEdited,
+      ),
+    ));
+
+    // Restore Google session
     final savedEmail = prefs.getString(_prefGoogleEmail);
     if (savedEmail == null) return;
-    // Restore email so UI shows "đã kết nối" immediately
     safeSetState(state.copyWith(
       googleEmail: () => savedEmail,
       syncMsg: 'Đã kết nối · Ấn "Đồng bộ ngay" để cập nhật',
     ));
-    // Try silent sign-in and auto-sync in background
     try {
       final account = await DriveService.signInSilently();
-      if (account != null) {
-        await _runSync(account);
-      }
-    } catch (_) {
-      // Silent fail — user can manually sync later
-    }
+      if (account != null) await _runSync(account);
+    } catch (_) {}
+  }
+
+  Future<void> _saveProfile() async {
+    final prefs = await SharedPreferences.getInstance();
+    final p = state.profile;
+    await prefs.setString(_prefName, p.name);
+    await prefs.setString(_prefBirthDate, p.birthDate);
+    await prefs.setString(_prefBirthTime, p.birthTime);
+    await prefs.setString(_prefGender, p.gender);
+    await prefs.setBool(_prefNameEdited, p.nameEdited);
+    await prefs.setBool(_prefBirthEdited, p.birthDateEdited);
   }
 
   List<EventModel> eventsOn(String dateKey) => [
@@ -135,12 +167,24 @@ class AppViewModel extends BaseViewModel<AppState> {
 
   // ── Profile ──
 
-  void setName(String v) => safeSetState(state.copyWith(
-        profile: state.profile.copyWith(name: v, nameEdited: true)));
-  void setBirthDate(String v) => safeSetState(state.copyWith(
-        profile: state.profile.copyWith(birthDate: v, birthDateEdited: true)));
-  void setBirthTime(String v) => safeSetState(state.copyWith(profile: state.profile.copyWith(birthTime: v)));
-  void setGender(String v) => safeSetState(state.copyWith(profile: state.profile.copyWith(gender: v)));
+  void setName(String v) {
+    safeSetState(state.copyWith(profile: state.profile.copyWith(name: v, nameEdited: true)));
+    _saveProfile();
+  }
+
+  void setBirthDate(String v) {
+    safeSetState(state.copyWith(profile: state.profile.copyWith(birthDate: v, birthDateEdited: true)));
+    _saveProfile();
+  }
+  void setBirthTime(String v) {
+    safeSetState(state.copyWith(profile: state.profile.copyWith(birthTime: v)));
+    _saveProfile();
+  }
+
+  void setGender(String v) {
+    safeSetState(state.copyWith(profile: state.profile.copyWith(gender: v)));
+    _saveProfile();
+  }
 
   // ── Weather ──
 
