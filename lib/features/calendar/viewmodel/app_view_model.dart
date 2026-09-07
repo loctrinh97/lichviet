@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 import '../services/drive_service.dart';
 import '../model/event_model.dart';
@@ -33,11 +34,33 @@ class AppViewModel extends BaseViewModel<AppState> {
     safeSetState(state.copyWith(events: const []));
     WidgetService.updateWidget();
     _fetchWeather(const WeatherCity(name: 'Hà Nội', admin: '', lat: 21.0285, lon: 105.8542));
+    _restoreGoogleSession();
 
-    // Hide splash after 2.5s
     Future.delayed(const Duration(milliseconds: 2500), () {
       safeSetState(state.copyWith(splashVisible: false));
     });
+  }
+
+  static const _prefGoogleEmail = 'google_email';
+
+  Future<void> _restoreGoogleSession() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedEmail = prefs.getString(_prefGoogleEmail);
+    if (savedEmail == null) return;
+    // Restore email so UI shows "đã kết nối" immediately
+    safeSetState(state.copyWith(
+      googleEmail: () => savedEmail,
+      syncMsg: 'Đã kết nối · Ấn "Đồng bộ ngay" để cập nhật',
+    ));
+    // Try silent sign-in and auto-sync in background
+    try {
+      final account = await DriveService.signInSilently();
+      if (account != null) {
+        await _runSync(account);
+      }
+    } catch (_) {
+      // Silent fail — user can manually sync later
+    }
   }
 
   List<EventModel> eventsOn(String dateKey) => [
@@ -282,15 +305,28 @@ class AppViewModel extends BaseViewModel<AppState> {
     if (state.syncState == SyncState.running) return;
     safeSetState(state.copyWith(
       syncState: SyncState.running,
-      syncMsg: 'Đang đăng nhập Google…',
+      syncMsg: 'Đang kết nối Google…',
     ));
     try {
-      final account = await DriveService.signIn();
+      // Try silent sign-in first (already connected), fall back to interactive
+      var account = await DriveService.signInSilently();
+      account ??= await DriveService.signIn();
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_prefGoogleEmail, account.email);
       safeSetState(state.copyWith(
-        googleEmail: () => account.email,
+        googleEmail: () => account!.email,
         syncMsg: 'Đang đọc dữ liệu từ Drive…',
       ));
+      await _runSync(account);
+    } catch (e) {
+      safeSetState(state.copyWith(
+        syncState: SyncState.idle,
+        syncMsg: 'Lỗi: ${e.toString().replaceAll('Exception: ', '')}',
+      ));
+    }
+  }
 
+  Future<void> _runSync(dynamic account) async {
       // ── Step 1: Merge với Drive (bỏ qua nếu Drive full) ──
       String driveNote = '';
       try {
@@ -339,16 +375,12 @@ class AppViewModel extends BaseViewModel<AppState> {
         syncState: SyncState.done,
         syncMsg: 'Đồng bộ lúc $timeStr · ${gcalEvents.length} sự kiện$driveNote',
       ));
-    } catch (e) {
-      safeSetState(state.copyWith(
-        syncState: SyncState.idle,
-        syncMsg: 'Lỗi: ${e.toString().replaceAll('Exception: ', '')}',
-      ));
-    }
   }
 
   Future<void> disconnectGoogle() async {
     await DriveService.signOut();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_prefGoogleEmail);
     safeSetState(state.copyWith(
       googleEmail: () => null,
       gcalEvents: [],

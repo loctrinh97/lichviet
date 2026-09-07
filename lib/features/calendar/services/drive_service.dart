@@ -19,10 +19,10 @@ class DriveService {
     return account;
   }
 
-  static Future<void> signOut() => _googleSignIn.signOut();
+  static Future<void> signOut() => _googleSignIn.disconnect();
 
-  static Future<GoogleSignInAccount?> get currentUser async =>
-      _googleSignIn.currentUser ?? await _googleSignIn.signInSilently();
+  static Future<GoogleSignInAccount?> signInSilently() =>
+      _googleSignIn.signInSilently();
 
   static Future<drive.DriveApi> _api(GoogleSignInAccount account) async {
     final headers = await account.authHeaders;
