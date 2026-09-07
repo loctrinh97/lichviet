@@ -153,7 +153,7 @@ class _ProfileTabState extends ConsumerState<ProfileTab> {
                 children: [
                   _fieldLabel('Ngày sinh', t),
                   _pickerField(
-                    value: ps.birthDate.isEmpty ? '----' : _formatDate(ps.birthDate),
+                    value: ps.birthDate.isEmpty ? '--/--/----' : _formatDate(ps.birthDate),
                     icon: Icons.calendar_today_outlined,
                     onTap: () => _pickDate(context, vm, ps.birthDate),
                     t: t,
@@ -167,7 +167,7 @@ class _ProfileTabState extends ConsumerState<ProfileTab> {
                 children: [
                   _fieldLabel('Giờ sinh', t),
                   _pickerField(
-                    value: ps.birthTime.isEmpty ? '----' : ps.birthTime,
+                    value: ps.birthTime.isEmpty ? '--:--' : ps.birthTime,
                     icon: Icons.access_time_outlined,
                     onTap: () => _pickTime(context, vm, ps.birthTime),
                     t: t,
@@ -204,8 +204,18 @@ class _ProfileTabState extends ConsumerState<ProfileTab> {
           const SizedBox(height: 12),
           _settingRow('Ngôn ngữ', t, trailing: Text('Tiếng Việt', style: TextStyle(fontSize: 13.5, color: t.muted))),
           const SizedBox(height: 12),
-          _settingRow('Thành phố mặc định', t,
-            trailing: Text(state.city?.name ?? 'Hà Nội', style: TextStyle(fontSize: 13.5, color: t.muted))),
+          _settingRow('Địa chỉ', t,
+            trailing: GestureDetector(
+              onTap: () => vm.useGeo(),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                Text(
+                  state.city?.displayName ?? '----',
+                  style: TextStyle(fontSize: 13.5, color: t.muted),
+                ),
+                const SizedBox(width: 6),
+                Icon(Icons.my_location, size: 14, color: t.accent),
+              ]),
+            )),
 
           const SizedBox(height: 24),
           _sectionLabel('DỮ LIỆU', t),
@@ -497,7 +507,7 @@ class _ProfileTabState extends ConsumerState<ProfileTab> {
         decoration: InputDecoration(
           border: InputBorder.none,
           isDense: true,
-          hintText: '----',
+          hintText: 'Nhập họ và tên',
           hintStyle: TextStyle(color: t.dim, fontSize: 14),
         ),
         style: TextStyle(fontSize: 14, color: t.text),
