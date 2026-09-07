@@ -63,14 +63,15 @@ class DriveService {
     return jsonDecode(utf8.decode(chunks)) as Map<String, dynamic>;
   }
 
-  /// Fetch events from all Google Calendars for the next 90 days.
+  /// Fetch events from all Google Calendars: 1 year back + 1 year ahead.
   static Future<List<EventModel>> fetchCalendarEvents(GoogleSignInAccount account) async {
     final headers = await account.authHeaders;
     final client = _AuthClient(headers);
     final calApi = cal.CalendarApi(client);
 
     final now = DateTime.now();
-    final until = now.add(const Duration(days: 90));
+    final from = DateTime(now.year - 1, now.month, now.day);
+    final until = DateTime(now.year + 1, now.month, now.day);
     final events = <EventModel>[];
 
     final calendars = await calApi.calendarList.list();
@@ -78,25 +79,36 @@ class DriveService {
       final id = calendar.id;
       if (id == null) continue;
       try {
-        final result = await calApi.events.list(
-          id,
-          timeMin: now,
-          timeMax: until,
-          singleEvents: true,
-          orderBy: 'startTime',
-          maxResults: 250,
-        );
-        for (final e in result.items ?? []) {
-          final start = e.start?.date ?? e.start?.dateTime?.toLocal();
-          if (start == null) continue;
-          events.add(EventModel(
-            id: 'gcal_${e.id}',
-            date: EventModel.dateKey(start),
-            title: e.summary ?? '(Không có tiêu đề)',
-            updatedAt: (e.updated ?? now).millisecondsSinceEpoch,
-            fromGCal: true,
-          ));
-        }
+        String? pageToken;
+        do {
+          final result = await calApi.events.list(
+            id,
+            timeMin: from.toUtc(),
+            timeMax: until.toUtc(),
+            singleEvents: true,
+            orderBy: 'startTime',
+            maxResults: 500,
+            pageToken: pageToken,
+          );
+          for (final e in result.items ?? []) {
+            // All-day: e.start.date is yyyy-MM-dd with no timezone → use UTC fields directly
+            // Timed: e.start.dateTime is UTC → convert to local
+            final startDate = e.start?.date;
+            final startDt = e.start?.dateTime?.toLocal();
+            final start = startDate != null
+                ? DateTime(startDate.year, startDate.month, startDate.day)
+                : startDt;
+            if (start == null) continue;
+            events.add(EventModel(
+              id: 'gcal_${e.id}',
+              date: EventModel.dateKey(start),
+              title: e.summary ?? '(Không có tiêu đề)',
+              updatedAt: (e.updated ?? now).millisecondsSinceEpoch,
+              fromGCal: true,
+            ));
+          }
+          pageToken = result.nextPageToken;
+        } while (pageToken != null);
       } catch (_) {
         // Skip calendars we can't read
       }

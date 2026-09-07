@@ -328,7 +328,7 @@ class AppViewModel extends BaseViewModel<AppState> {
       safeSetState(state.copyWith(
         gcalEvents: gcalEvents,
         syncState: SyncState.done,
-        syncMsg: 'Đồng bộ thành công lúc $timeStr · ${account.email}',
+        syncMsg: 'Đồng bộ thành công lúc $timeStr · ${account.email} · ${gcalEvents.length} sự kiện GCal',
       ));
     } catch (e) {
       safeSetState(state.copyWith(
