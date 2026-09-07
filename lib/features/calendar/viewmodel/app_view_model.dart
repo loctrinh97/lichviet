@@ -135,8 +135,10 @@ class AppViewModel extends BaseViewModel<AppState> {
 
   // ── Profile ──
 
-  void setName(String v) => safeSetState(state.copyWith(profile: state.profile.copyWith(name: v)));
-  void setBirthDate(String v) => safeSetState(state.copyWith(profile: state.profile.copyWith(birthDate: v)));
+  void setName(String v) => safeSetState(state.copyWith(
+        profile: state.profile.copyWith(name: v, nameEdited: true)));
+  void setBirthDate(String v) => safeSetState(state.copyWith(
+        profile: state.profile.copyWith(birthDate: v, birthDateEdited: true)));
   void setBirthTime(String v) => safeSetState(state.copyWith(profile: state.profile.copyWith(birthTime: v)));
   void setGender(String v) => safeSetState(state.copyWith(profile: state.profile.copyWith(gender: v)));
 
@@ -313,6 +315,16 @@ class AppViewModel extends BaseViewModel<AppState> {
       account ??= await DriveService.signIn();
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_prefGoogleEmail, account.email);
+
+      // Điền tên từ Google nếu user chưa tự sửa
+      final googleName = account.displayName ?? '';
+      final profile = state.profile;
+      if (!profile.nameEdited && googleName.isNotEmpty) {
+        safeSetState(state.copyWith(
+          profile: profile.copyWith(name: googleName),
+        ));
+      }
+
       safeSetState(state.copyWith(
         googleEmail: () => account!.email,
         syncMsg: 'Đang đọc dữ liệu từ Drive…',

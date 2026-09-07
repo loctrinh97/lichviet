@@ -106,16 +106,26 @@ class _ProfileTabState extends ConsumerState<ProfileTab> {
     final vm = ref.read(appViewModelProvider.notifier);
     final t = widget.theme;
 
+    // Sync controller khi tên được điền từ Google (chỉ khi controller rỗng)
+    if (_nameCtrl.text.isEmpty && state.profile.name.isNotEmpty) {
+      _nameCtrl.text = state.profile.name;
+    }
+
     // Compute summary
     final ps = state.profile;
-    final bpParts = ps.birthDate.split('-').map(int.parse).toList();
-    final alSinh = bpParts.length == 3
-        ? LunarCalendar.solar2lunar(bpParts[2], bpParts[1], bpParts[0])
-        : LunarCalendar.solar2lunar(12, 8, 1994);
-    final ccSinh = LunarCalendar.canChi(alSinh);
-    final cg = AstrologyContent.conGiap[ccSinh.chiYear] ?? AstrologyContent.conGiap['Tý']!;
-    final na = AstrologyContent.napAm(alSinh.year);
-    final summary = 'Dùng để tính can chi và tử vi: ${alSinh.day}/${alSinh.month} âm lịch năm ${ccSinh.year} · ${cg.name} · mệnh ${na.hanh}.';
+    final bpParts = ps.birthDate.isNotEmpty
+        ? ps.birthDate.split('-').map(int.tryParse).toList()
+        : <int?>[];
+    final hasBirthDate = bpParts.length == 3 && bpParts.every((v) => v != null);
+    final alSinh = hasBirthDate
+        ? LunarCalendar.solar2lunar(bpParts[2]!, bpParts[1]!, bpParts[0]!)
+        : null;
+    final ccSinh = alSinh != null ? LunarCalendar.canChi(alSinh) : null;
+    final cg = ccSinh != null ? (AstrologyContent.conGiap[ccSinh.chiYear] ?? AstrologyContent.conGiap['Tý']!) : null;
+    final na = alSinh != null ? AstrologyContent.napAm(alSinh.year) : null;
+    final summary = hasBirthDate && alSinh != null && ccSinh != null
+        ? 'Dùng để tính can chi và tử vi: ${alSinh.day}/${alSinh.month} âm lịch năm ${ccSinh.year} · ${cg!.name} · mệnh ${na!.hanh}.'
+        : 'Nhập ngày sinh để xem can chi và tử vi.';
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
@@ -143,10 +153,11 @@ class _ProfileTabState extends ConsumerState<ProfileTab> {
                 children: [
                   _fieldLabel('Ngày sinh', t),
                   _pickerField(
-                    value: _formatDate(ps.birthDate),
+                    value: ps.birthDate.isEmpty ? '----' : _formatDate(ps.birthDate),
                     icon: Icons.calendar_today_outlined,
                     onTap: () => _pickDate(context, vm, ps.birthDate),
                     t: t,
+                    isEmpty: ps.birthDate.isEmpty,
                   ),
                 ],
               )),
@@ -156,10 +167,11 @@ class _ProfileTabState extends ConsumerState<ProfileTab> {
                 children: [
                   _fieldLabel('Giờ sinh', t),
                   _pickerField(
-                    value: ps.birthTime,
+                    value: ps.birthTime.isEmpty ? '----' : ps.birthTime,
                     icon: Icons.access_time_outlined,
                     onTap: () => _pickTime(context, vm, ps.birthTime),
                     t: t,
+                    isEmpty: ps.birthTime.isEmpty,
                   ),
                 ],
               )),
@@ -485,15 +497,15 @@ class _ProfileTabState extends ConsumerState<ProfileTab> {
         decoration: InputDecoration(
           border: InputBorder.none,
           isDense: true,
-          hintText: 'Nhập tên…',
-          hintStyle: TextStyle(color: t.muted, fontSize: 14),
+          hintText: '----',
+          hintStyle: TextStyle(color: t.dim, fontSize: 14),
         ),
         style: TextStyle(fontSize: 14, color: t.text),
       ),
     );
   }
 
-  Widget _pickerField({required String value, required IconData icon, required VoidCallback onTap, required LvTheme t}) {
+  Widget _pickerField({required String value, required IconData icon, required VoidCallback onTap, required LvTheme t, bool isEmpty = false}) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -507,9 +519,9 @@ class _ProfileTabState extends ConsumerState<ProfileTab> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: t.muted, size: 14),
+            Icon(icon, color: isEmpty ? t.dim : t.muted, size: 14),
             const SizedBox(width: 6),
-            Text(value, style: TextStyle(fontSize: 14, color: t.text)),
+            Text(value, style: TextStyle(fontSize: 14, color: isEmpty ? t.dim : t.text)),
           ],
         ),
       ),
