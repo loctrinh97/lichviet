@@ -40,8 +40,10 @@ class AppViewModel extends BaseViewModel<AppState> {
     });
   }
 
-  List<EventModel> eventsOn(String dateKey) =>
-      state.events.where((e) => !e.deleted && e.date == dateKey).toList();
+  List<EventModel> eventsOn(String dateKey) => [
+        ...state.events.where((e) => !e.deleted && e.date == dateKey),
+        ...state.gcalEvents.where((e) => e.date == dateKey),
+      ];
 
   // ── Navigation ──
 
@@ -319,8 +321,12 @@ class AppViewModel extends BaseViewModel<AppState> {
         'events': merged.map((e) => e.toJson()).toList(),
       });
 
+      safeSetState(state.copyWith(syncMsg: 'Đang đọc Google Calendar…'));
+      final gcalEvents = await DriveService.fetchCalendarEvents(account);
+
       final timeStr = _timeStr(DateTime.now());
       safeSetState(state.copyWith(
+        gcalEvents: gcalEvents,
         syncState: SyncState.done,
         syncMsg: 'Đồng bộ thành công lúc $timeStr · ${account.email}',
       ));
@@ -336,6 +342,7 @@ class AppViewModel extends BaseViewModel<AppState> {
     await DriveService.signOut();
     safeSetState(state.copyWith(
       googleEmail: () => null,
+      gcalEvents: [],
       syncState: SyncState.idle,
       syncMsg: 'Đã ngắt kết nối Google. Dữ liệu vẫn ở máy này.',
     ));

@@ -13,6 +13,7 @@ class AppState {
   final int viewMonth;
   final String? selectedDateKey;
   final List<EventModel> events;
+  final List<EventModel> gcalEvents;
   final String eventDraft;
   final ProfileModel profile;
   final String cityDraft;
@@ -38,6 +39,7 @@ class AppState {
     required this.viewMonth,
     this.selectedDateKey,
     this.events = const [],
+    this.gcalEvents = const [],
     this.eventDraft = '',
     this.profile = const ProfileModel(),
     this.cityDraft = '',
@@ -64,6 +66,7 @@ class AppState {
     int? viewMonth,
     String? Function()? selectedDateKey,
     List<EventModel>? events,
+    List<EventModel>? gcalEvents,
     String? eventDraft,
     ProfileModel? profile,
     String? cityDraft,
@@ -89,6 +92,7 @@ class AppState {
       viewMonth: viewMonth ?? this.viewMonth,
       selectedDateKey: selectedDateKey != null ? selectedDateKey() : this.selectedDateKey,
       events: events ?? this.events,
+      gcalEvents: gcalEvents ?? this.gcalEvents,
       eventDraft: eventDraft ?? this.eventDraft,
       profile: profile ?? this.profile,
       cityDraft: cityDraft ?? this.cityDraft,

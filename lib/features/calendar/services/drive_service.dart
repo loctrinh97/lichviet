@@ -1,14 +1,17 @@
 import 'dart:convert';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
+import 'package:googleapis/calendar/v3.dart' as cal;
 import 'package:http/http.dart' as http;
+import '../model/event_model.dart';
 
 const _fileName = 'lichviet_data.json';
 const _mimeType = 'application/json';
 const _driveScope = 'https://www.googleapis.com/auth/drive.appdata';
+const _calScope = 'https://www.googleapis.com/auth/calendar.readonly';
 
 class DriveService {
-  static final _googleSignIn = GoogleSignIn(scopes: [_driveScope]);
+  static final _googleSignIn = GoogleSignIn(scopes: [_driveScope, _calScope]);
 
   static Future<GoogleSignInAccount> signIn() async {
     final account = await _googleSignIn.signIn();
@@ -58,6 +61,47 @@ class DriveService {
       chunks.addAll(chunk);
     }
     return jsonDecode(utf8.decode(chunks)) as Map<String, dynamic>;
+  }
+
+  /// Fetch events from all Google Calendars for the next 90 days.
+  static Future<List<EventModel>> fetchCalendarEvents(GoogleSignInAccount account) async {
+    final headers = await account.authHeaders;
+    final client = _AuthClient(headers);
+    final calApi = cal.CalendarApi(client);
+
+    final now = DateTime.now();
+    final until = now.add(const Duration(days: 90));
+    final events = <EventModel>[];
+
+    final calendars = await calApi.calendarList.list();
+    for (final calendar in calendars.items ?? []) {
+      final id = calendar.id;
+      if (id == null) continue;
+      try {
+        final result = await calApi.events.list(
+          id,
+          timeMin: now,
+          timeMax: until,
+          singleEvents: true,
+          orderBy: 'startTime',
+          maxResults: 250,
+        );
+        for (final e in result.items ?? []) {
+          final start = e.start?.date ?? e.start?.dateTime?.toLocal();
+          if (start == null) continue;
+          events.add(EventModel(
+            id: 'gcal_${e.id}',
+            date: EventModel.dateKey(start),
+            title: e.summary ?? '(Không có tiêu đề)',
+            updatedAt: (e.updated ?? now).millisecondsSinceEpoch,
+            fromGCal: true,
+          ));
+        }
+      } catch (_) {
+        // Skip calendars we can't read
+      }
+    }
+    return events;
   }
 
   static Future<String?> _findFile(drive.DriveApi api) async {

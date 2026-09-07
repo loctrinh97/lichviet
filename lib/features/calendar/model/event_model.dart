@@ -4,6 +4,7 @@ class EventModel {
   final String title;
   final int updatedAt;
   final bool deleted;
+  final bool fromGCal;
 
   const EventModel({
     required this.id,
@@ -11,6 +12,7 @@ class EventModel {
     required this.title,
     required this.updatedAt,
     this.deleted = false,
+    this.fromGCal = false,
   });
 
   EventModel copyWith({String? title, int? updatedAt, bool? deleted}) {
@@ -20,6 +22,7 @@ class EventModel {
       title: title ?? this.title,
       updatedAt: updatedAt ?? this.updatedAt,
       deleted: deleted ?? this.deleted,
+      fromGCal: fromGCal,
     );
   }
 

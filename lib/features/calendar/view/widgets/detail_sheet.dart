@@ -196,17 +196,23 @@ class _DetailSheetState extends ConsumerState<DetailSheet> {
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     child: Row(children: [
                       Container(width: 3, height: 22, decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(2), color: LvColors.accent400)),
+                        borderRadius: BorderRadius.circular(2),
+                        color: e.fromGCal ? LvColors.event : LvColors.accent400)),
                       const SizedBox(width: 12),
+                      if (e.fromGCal) ...[
+                        Icon(Icons.calendar_today, size: 12, color: LvColors.event),
+                        const SizedBox(width: 5),
+                      ],
                       Expanded(child: Text(e.title, style: TextStyle(fontSize: 14, color: t.text))),
-                      GestureDetector(
-                        onTap: () => vm.deleteEvent(e.id),
-                        child: Container(
-                          width: 28, height: 28,
-                          decoration: BoxDecoration(borderRadius: BorderRadius.circular(LvColors.radiusSm)),
-                          child: Icon(Icons.delete_outline, color: t.dim, size: 15),
+                      if (!e.fromGCal)
+                        GestureDetector(
+                          onTap: () => vm.deleteEvent(e.id),
+                          child: Container(
+                            width: 28, height: 28,
+                            decoration: BoxDecoration(borderRadius: BorderRadius.circular(LvColors.radiusSm)),
+                            child: Icon(Icons.delete_outline, color: t.dim, size: 15),
+                          ),
                         ),
-                      ),
                     ]),
                   ),
                   Divider(color: t.divider, height: 1),

@@ -143,7 +143,10 @@ class _CalendarGrid extends StatelessWidget {
       final inMonth = d.month == vm0 + 1;
       final isToday = k == EventModel.dateKey(now);
       final weekend = d.weekday >= 6;
-      final evs = state.events.where((e) => !e.deleted && e.date == k).toList();
+      final evs = [
+        ...state.events.where((e) => !e.deleted && e.date == k),
+        ...state.gcalEvents.where((e) => e.date == k),
+      ];
       cells.add(_CellData(d: d, k: k, al: al, le: le, inMonth: inMonth, isToday: isToday, weekend: weekend, evs: evs));
     }
 
@@ -319,7 +322,10 @@ class _UpcomingSection extends StatelessWidget {
       final k = EventModel.dateKey(d);
       final al = LunarCalendar.solar2lunar(d.day, d.month, d.year);
       final le = LunarCalendar.holidays(d, al);
-      final evs = state.events.where((e) => !e.deleted && e.date == k).toList();
+      final evs = [
+        ...state.events.where((e) => !e.deleted && e.date == k),
+        ...state.gcalEvents.where((e) => e.date == k),
+      ];
       final isFirst15 = al.day == 1 || al.day == 15;
 
       final names = <String>[];
