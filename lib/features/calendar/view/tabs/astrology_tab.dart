@@ -132,19 +132,19 @@ class AstrologyTab extends ConsumerWidget {
           ),
 
           const SizedBox(height: 16),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(Icons.auto_awesome, color: t.dim, size: 14),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Luận giải lấy từ kho nội dung tĩnh trong app, chạy offline. Phân tích AI: tuỳ chọn, cấu hình sau.',
-                  style: TextStyle(fontSize: 11.5, height: 1.6, color: t.dim),
-                ),
-              ),
-            ],
-          ),
+          // Row(
+          //   crossAxisAlignment: CrossAxisAlignment.start,
+          //   children: [
+          //     Icon(Icons.auto_awesome, color: t.dim, size: 14),
+          //     const SizedBox(width: 8),
+          //     Expanded(
+          //       child: Text(
+          //         'Luận giải lấy từ kho nội dung tĩnh trong app, chạy offline. Phân tích AI: tuỳ chọn, cấu hình sau.',
+          //         style: TextStyle(fontSize: 11.5, height: 1.6, color: t.dim),
+          //       ),
+          //     ),
+          //   ],
+          // ),
         ],
       ),
     );

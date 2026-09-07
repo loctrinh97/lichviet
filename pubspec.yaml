@@ -9,6 +9,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
 
   # State management
   flutter_riverpod: ^2.4.9
@@ -43,6 +45,10 @@ dependencies:
 
   # Location
   geolocator: ^13.0.1
+
+  # Google Sign-In & Drive
+  google_sign_in: ^6.2.1
+  googleapis: ^13.2.0
 
   # UI utilities
   shimmer_animation: ^2.2.1

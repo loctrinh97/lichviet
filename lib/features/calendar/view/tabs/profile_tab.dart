@@ -3,18 +3,107 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../services/lunar_calendar.dart';
 import '../../services/astrology.dart';
 import '../../state/app_state.dart';
-import '../../viewmodel/app_view_model.dart';
+import '../../viewmodel/app_view_model.dart' hide TimeOfDay;
 import '../app_colors_ext.dart';
 
-class ProfileTab extends ConsumerWidget {
+class ProfileTab extends ConsumerStatefulWidget {
   const ProfileTab({super.key, required this.theme});
   final LvTheme theme;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ProfileTab> createState() => _ProfileTabState();
+}
+
+class _ProfileTabState extends ConsumerState<ProfileTab> {
+  late final TextEditingController _nameCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameCtrl = TextEditingController(text: ref.read(appViewModelProvider).profile.name);
+  }
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _awaitKeyboardDismiss(BuildContext context) async {
+    if (MediaQuery.of(context).viewInsets.bottom > 0) {
+      FocusManager.instance.primaryFocus?.unfocus();
+      await Future.delayed(const Duration(milliseconds: 500));
+    }
+  }
+
+  Future<void> _pickDate(BuildContext context, AppViewModel vm, String current) async {
+    await _awaitKeyboardDismiss(context);
+    if (!context.mounted) return;
+    final parts = current.split('-');
+    final initial = parts.length == 3
+        ? DateTime(int.parse(parts[0]), int.parse(parts[1]), int.parse(parts[2]))
+        : DateTime(1994, 8, 12);
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+      builder: (ctx, child) => _themeDialog(ctx, child, widget.theme),
+    );
+    if (picked != null) {
+      vm.setBirthDate(
+        '${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}',
+      );
+    }
+  }
+
+  Future<void> _pickTime(BuildContext context, AppViewModel vm, String current) async {
+    await _awaitKeyboardDismiss(context);
+    if (!context.mounted) return;
+    final parts = current.split(':');
+    final initial = parts.length == 2
+        ? TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1]))
+        : const TimeOfDay(hour: 7, minute: 30);
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: initial,
+      initialEntryMode: TimePickerEntryMode.dialOnly,
+      builder: (ctx, child) => _themeDialog(ctx, child, widget.theme),
+    );
+    if (picked != null) {
+      vm.setBirthTime(
+        '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}',
+      );
+    }
+  }
+
+  Widget _themeDialog(BuildContext ctx, Widget? child, LvTheme t) {
+    return MediaQuery(
+      data: MediaQuery.of(ctx).copyWith(viewInsets: EdgeInsets.zero),
+      child: Theme(
+        data: ThemeData(
+          colorScheme: ColorScheme(
+            brightness: t.isDark ? Brightness.dark : Brightness.light,
+            primary: t.accent,
+            onPrimary: Colors.white,
+            secondary: t.accent,
+            onSecondary: Colors.white,
+            surface: t.surface,
+            onSurface: t.text,
+            error: Colors.red,
+            onError: Colors.white,
+          ),
+        ),
+        child: child!,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final state = ref.watch(appViewModelProvider);
     final vm = ref.read(appViewModelProvider.notifier);
-    final t = theme;
+    final t = widget.theme;
 
     // Compute summary
     final ps = state.profile;
@@ -43,7 +132,7 @@ class ProfileTab extends ConsumerWidget {
           const SizedBox(height: 12),
 
           _fieldLabel('Tên', t),
-          _inputField(ps.name, (v) => vm.setName(v), t),
+          _nameField(vm, t),
           const SizedBox(height: 12),
 
           Row(
@@ -52,15 +141,25 @@ class ProfileTab extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _fieldLabel('Ngày sinh', t),
-                  _inputField(ps.birthDate, (v) => vm.setBirthDate(v), t),
+                  _pickerField(
+                    value: _formatDate(ps.birthDate),
+                    icon: Icons.calendar_today_outlined,
+                    onTap: () => _pickDate(context, vm, ps.birthDate),
+                    t: t,
+                  ),
                 ],
               )),
               const SizedBox(width: 8),
-              SizedBox(width: 104, child: Column(
+              SizedBox(width: 110, child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _fieldLabel('Giờ sinh', t),
-                  _inputField(ps.birthTime, (v) => vm.setBirthTime(v), t),
+                  _pickerField(
+                    value: ps.birthTime,
+                    icon: Icons.access_time_outlined,
+                    onTap: () => _pickTime(context, vm, ps.birthTime),
+                    t: t,
+                  ),
                 ],
               )),
             ],
@@ -140,60 +239,76 @@ class ProfileTab extends ConsumerWidget {
           ),
 
           const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(LvColors.radiusLg),
-              border: Border.all(color: t.divider),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(children: [
-                  Icon(Icons.cloud_upload, color: LvColors.accent400, size: 17),
-                  const SizedBox(width: 8),
-                  Text('Đồng bộ với Google Drive', style: TextStyle(fontSize: 14, color: t.text)),
-                ]),
-                const SizedBox(height: 6),
-                Text(
-                  'Chỉ hiện đăng nhập Google khi bạn bấm. Dữ liệu mới hơn sẽ được ưu tiên, đồng bộ thủ công và một lần khi mở app.',
-                  style: TextStyle(fontSize: 12, height: 1.6, color: t.muted),
-                ),
-                const SizedBox(height: 12),
-                GestureDetector(
-                  onTap: vm.doSync,
-                  child: Consumer(builder: (ctx, ref2, _) {
-                    final s = ref2.watch(appViewModelProvider).syncState;
-                    final isDone = s == SyncState.done;
-                    return Container(
+          Consumer(builder: (ctx, ref2, _) {
+            final s2 = ref2.watch(appViewModelProvider);
+            final syncState = s2.syncState;
+            final email = s2.googleEmail;
+            final isConnected = email != null;
+            final isRunning = syncState == SyncState.running;
+            return Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(LvColors.radiusLg),
+                border: Border.all(color: t.divider),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(children: [
+                    Icon(Icons.cloud_upload, color: LvColors.accent400, size: 17),
+                    const SizedBox(width: 8),
+                    Text('Đồng bộ với Google Drive', style: TextStyle(fontSize: 14, color: t.text)),
+                    if (isConnected) ...[
+                      const Spacer(),
+                      GestureDetector(
+                        onTap: vm.disconnectGoogle,
+                        child: Text('Ngắt kết nối', style: TextStyle(fontSize: 12, color: t.muted)),
+                      ),
+                    ],
+                  ]),
+                  if (isConnected) ...[
+                    const SizedBox(height: 4),
+                    Row(children: [
+                      Icon(Icons.check_circle_outline, color: LvColors.event, size: 13),
+                      const SizedBox(width: 5),
+                      Text(email, style: TextStyle(fontSize: 12, color: LvColors.event)),
+                    ]),
+                  ],
+                  const SizedBox(height: 6),
+                  Text(
+                    'Dữ liệu được lưu riêng tư trong appDataFolder — chỉ app này đọc được. Merge tự động theo thời gian cập nhật.',
+                    style: TextStyle(fontSize: 12, height: 1.6, color: t.muted),
+                  ),
+                  const SizedBox(height: 12),
+                  GestureDetector(
+                    onTap: isRunning ? null : vm.doSync,
+                    child: Container(
                       width: double.infinity, height: 38,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(LvColors.radiusMd),
-                        border: Border.all(color: isDone ? t.divider : t.accent),
+                        border: Border.all(color: isRunning ? t.divider : t.accent),
+                        color: isRunning ? t.divider.withValues(alpha: 0.1) : Colors.transparent,
                       ),
                       alignment: Alignment.center,
-                      child: Text(
-                        s == SyncState.idle
-                            ? 'Kết nối Google Drive'
-                            : s == SyncState.running
-                                ? 'Đang đồng bộ…'
-                                : 'Đồng bộ lại',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w500, fontSize: 13.5,
-                          color: isDone ? t.text : t.accent,
-                        ),
-                      ),
-                    );
-                  }),
-                ),
-                const SizedBox(height: 8),
-                Consumer(builder: (ctx, ref2, _) {
-                  final msg = ref2.watch(appViewModelProvider).syncMsg;
-                  return Text(msg, style: TextStyle(fontSize: 11.5, color: t.dim));
-                }),
-              ],
-            ),
-          ),
+                      child: isRunning
+                          ? Row(mainAxisSize: MainAxisSize.min, children: [
+                              SizedBox(width: 14, height: 14,
+                                child: CircularProgressIndicator(strokeWidth: 1.5, color: t.accent)),
+                              const SizedBox(width: 8),
+                              Text('Đang đồng bộ…', style: TextStyle(fontSize: 13.5, color: t.muted)),
+                            ])
+                          : Text(
+                              isConnected ? 'Đồng bộ ngay' : 'Kết nối Google Drive',
+                              style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13.5, color: t.accent),
+                            ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(s2.syncMsg, style: TextStyle(fontSize: 11.5, color: t.dim)),
+                ],
+              ),
+            );
+          }),
 
           const SizedBox(height: 16),
           Text(
@@ -205,30 +320,66 @@ class ProfileTab extends ConsumerWidget {
     );
   }
 
+  String _formatDate(String raw) {
+    final parts = raw.split('-');
+    if (parts.length != 3) return raw;
+    return '${parts[2]}/${parts[1]}/${parts[0]}';
+  }
+
+  Widget _nameField(AppViewModel vm, LvTheme t) {
+    return Container(
+      height: 44,
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      decoration: BoxDecoration(
+        color: t.surface,
+        borderRadius: BorderRadius.circular(LvColors.radiusMd),
+        border: Border.all(color: t.divider),
+      ),
+      alignment: Alignment.center,
+      child: TextField(
+        controller: _nameCtrl,
+        onChanged: vm.setName,
+        textAlign: TextAlign.center,
+        decoration: InputDecoration(
+          border: InputBorder.none,
+          isDense: true,
+          hintText: 'Nhập tên…',
+          hintStyle: TextStyle(color: t.muted, fontSize: 14),
+        ),
+        style: TextStyle(fontSize: 14, color: t.text),
+      ),
+    );
+  }
+
+  Widget _pickerField({required String value, required IconData icon, required VoidCallback onTap, required LvTheme t}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 44,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        decoration: BoxDecoration(
+          color: t.surface,
+          borderRadius: BorderRadius.circular(LvColors.radiusMd),
+          border: Border.all(color: t.divider),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: t.muted, size: 14),
+            const SizedBox(width: 6),
+            Text(value, style: TextStyle(fontSize: 14, color: t.text)),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _sectionLabel(String label, LvTheme t) =>
       Text(label, style: TextStyle(fontSize: 11, letterSpacing: 1.2, color: t.muted));
 
   Widget _fieldLabel(String label, LvTheme t) =>
       Padding(padding: const EdgeInsets.only(bottom: 5),
           child: Text(label, style: TextStyle(fontSize: 12, color: t.muted)));
-
-  Widget _inputField(String value, ValueChanged<String> onChange, LvTheme t) {
-    return Container(
-      height: 38,
-      padding: const EdgeInsets.symmetric(horizontal: 11),
-      decoration: BoxDecoration(
-        color: t.surface,
-        borderRadius: BorderRadius.circular(LvColors.radiusMd),
-        border: Border.all(color: t.divider),
-      ),
-      child: TextFormField(
-        initialValue: value,
-        onChanged: onChange,
-        decoration: const InputDecoration(border: InputBorder.none, isDense: true),
-        style: TextStyle(fontSize: 14, color: t.text),
-      ),
-    );
-  }
 
   Widget _settingRow(String label, LvTheme t, {required Widget trailing}) {
     return Row(

@@ -2,7 +2,7 @@ import WidgetKit
 import SwiftUI
 
 // MARK: - Shared data keys (must match widget_service.dart)
-private let appGroupId = "group.com.example.mobile_base.lichviet"
+private let appGroupId = "group.com.gpdigital.lichviet"
 
 struct LunarEntry: TimelineEntry {
     let date: Date

@@ -1,4 +1,4 @@
-package com.example.mobile_base
+package com.gpdigital.lichviet
 
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
@@ -8,7 +8,7 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
-    private val channel = "com.example.mobile_base/widget"
+    private val channel = "com.gpdigital.lichviet/widget"
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)

@@ -1,4 +1,4 @@
-package com.example.mobile_base
+package com.gpdigital.lichviet
 
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider

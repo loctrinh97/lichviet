@@ -5,6 +5,7 @@ import '../../state/app_state.dart';
 import '../../viewmodel/app_view_model.dart';
 import '../app_colors_ext.dart';
 import 'package:intl/intl.dart';
+import '../../../../shared/widgets/app_shimmer.dart';
 
 class WeatherTab extends ConsumerStatefulWidget {
   const WeatherTab({super.key, required this.theme});
@@ -149,8 +150,12 @@ class _WeatherTabState extends ConsumerState<WeatherTab> {
 
           const SizedBox(height: 20),
 
+          // Locating shimmer
+          if (state.wxLocating)
+            _LocatingShimmer(theme: t),
+
           // Current weather
-          Row(
+          if (!state.wxLocating) Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
@@ -186,7 +191,7 @@ class _WeatherTabState extends ConsumerState<WeatherTab> {
           ),
 
           // Stats grid
-          if (cur != null) ...[
+          if (!state.wxLocating && cur != null) ...[
             const SizedBox(height: 24),
             Row(
               children: [
@@ -200,7 +205,7 @@ class _WeatherTabState extends ConsumerState<WeatherTab> {
           ],
 
           // Hourly
-          if (wx?.hourly != null) ...[
+          if (!state.wxLocating && wx?.hourly != null) ...[
             const SizedBox(height: 24),
             Text('THEO GIỜ', style: TextStyle(fontSize: 11, letterSpacing: 1.2, color: t.muted)),
             const SizedBox(height: 12),
@@ -208,7 +213,7 @@ class _WeatherTabState extends ConsumerState<WeatherTab> {
           ],
 
           // Daily
-          if (wx?.daily != null) ...[
+          if (!state.wxLocating && wx?.daily != null) ...[
             const SizedBox(height: 24),
             Text('7 NGÀY TỚI', style: TextStyle(fontSize: 11, letterSpacing: 1.2, color: t.muted)),
             const SizedBox(height: 8),
@@ -296,6 +301,64 @@ IconData _phosphorToMaterial(String name) {
     case 'ph-snowflake': return Icons.ac_unit;
     case 'ph-cloud-lightning': return Icons.flash_on;
     default: return Icons.cloud;
+  }
+}
+
+class _LocatingShimmer extends StatefulWidget {
+  const _LocatingShimmer({required this.theme});
+  final LvTheme theme;
+
+  @override
+  State<_LocatingShimmer> createState() => _LocatingShimmerState();
+}
+
+class _LocatingShimmerState extends State<_LocatingShimmer> with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  late final Animation<double> _anim;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 1200))..repeat(reverse: true);
+    _anim = Tween<double>(begin: 0.3, end: 0.7).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = widget.theme;
+    final base = t.isDark ? const Color(0xFF2E3045) : const Color(0xFFE0E3EF);
+    return AnimatedBuilder(
+      animation: _anim,
+      builder: (_, __) => Opacity(
+        opacity: _anim.value,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(children: [
+              Icon(Icons.my_location, color: t.accent, size: 14),
+              const SizedBox(width: 6),
+              Text('Đang lấy vị trí…', style: TextStyle(fontSize: 13, color: t.muted)),
+            ]),
+            const SizedBox(height: 16),
+            Container(height: 20, width: 160, decoration: BoxDecoration(color: base, borderRadius: BorderRadius.circular(6))),
+            const SizedBox(height: 12),
+            Container(height: 56, width: 100, decoration: BoxDecoration(color: base, borderRadius: BorderRadius.circular(6))),
+            const SizedBox(height: 12),
+            Row(children: [
+              Container(height: 14, width: 120, decoration: BoxDecoration(color: base, borderRadius: BorderRadius.circular(4))),
+              const SizedBox(width: 12),
+              Container(height: 14, width: 80, decoration: BoxDecoration(color: base, borderRadius: BorderRadius.circular(4))),
+            ]),
+          ],
+        ),
+      ),
+    );
   }
 }
 

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:uuid/uuid.dart';
+import '../services/drive_service.dart';
 import '../model/event_model.dart';
 import '../model/weather_model.dart';
 import '../services/widget_service.dart';
@@ -180,13 +181,13 @@ class AppViewModel extends BaseViewModel<AppState> {
         safeSetState(state.copyWith(wxErr: 'Quyền vị trí bị từ chối vĩnh viễn. Vào Cài đặt để cấp lại.'));
         return;
       }
-      safeSetState(state.copyWith(wxErr: ''));
+      safeSetState(state.copyWith(wxErr: '', wxLocating: true));
       final pos = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(accuracy: LocationAccuracy.low),
       );
       await _reverseGeocode(pos.latitude, pos.longitude);
     } catch (_) {
-      safeSetState(state.copyWith(wxErr: 'Không lấy được vị trí. Thử lại sau.'));
+      safeSetState(state.copyWith(wxErr: 'Không lấy được vị trí. Thử lại sau.', wxLocating: false));
     }
   }
 
@@ -195,18 +196,25 @@ class AppViewModel extends BaseViewModel<AppState> {
       final uri = Uri.parse(
           'https://geocoding-api.open-meteo.com/v1/reverse?latitude=$lat&longitude=$lon&language=vi');
       final r = await http.get(uri);
-      String cityName = 'Vị trí của bạn';
+      String cityName = '';
       String admin = '';
       if (r.statusCode == 200) {
         final j = jsonDecode(r.body) as Map<String, dynamic>;
-        cityName = (j['name'] as String?) ?? cityName;
+        cityName = (j['name'] as String?) ?? '';
         admin = (j['admin1'] as String?) ?? '';
       }
-      final city = WeatherCity(name: cityName, admin: admin, lat: lat, lon: lon);
+      final city = WeatherCity(
+        name: 'Vị trí của bạn',
+        admin: cityName.isNotEmpty ? cityName : '',
+        lat: lat,
+        lon: lon,
+      );
       await _fetchWeather(city);
     } catch (_) {
       final city = WeatherCity(name: 'Vị trí của bạn', admin: '', lat: lat, lon: lon);
       await _fetchWeather(city);
+    } finally {
+      safeSetState(state.copyWith(wxLocating: false));
     }
   }
 
@@ -268,24 +276,73 @@ class AppViewModel extends BaseViewModel<AppState> {
 
   // ── Sync ──
 
-  void doSync() {
+  Future<void> doSync() async {
     if (state.syncState == SyncState.running) return;
     safeSetState(state.copyWith(
       syncState: SyncState.running,
       syncMsg: 'Đang đăng nhập Google…',
     ));
-    Future.delayed(const Duration(milliseconds: 700), () {
-      safeSetState(state.copyWith(syncMsg: 'Đang đọc dữ liệu từ Drive…'));
-    });
-    Future.delayed(const Duration(milliseconds: 1500), () {
-      final now = TimeOfDay.fromDateTime(DateTime.now());
-      final timeStr = '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+    try {
+      final account = await DriveService.signIn();
+      safeSetState(state.copyWith(
+        googleEmail: () => account.email,
+        syncMsg: 'Đang đọc dữ liệu từ Drive…',
+      ));
+
+      final remote = await DriveService.download(account);
+      final localEvents = state.events;
+
+      List<EventModel> merged = localEvents;
+      if (remote != null) {
+        final remoteEvents = (remote['events'] as List? ?? [])
+            .map((e) => EventModel.fromJson(e as Map<String, dynamic>))
+            .toList();
+        // Merge: newer updatedAt wins per id
+        final map = <String, EventModel>{};
+        for (final e in [...remoteEvents, ...localEvents]) {
+          final existing = map[e.id];
+          if (existing == null || e.updatedAt > existing.updatedAt) {
+            map[e.id] = e;
+          }
+        }
+        merged = map.values.toList();
+      }
+
+      safeSetState(state.copyWith(
+        events: merged,
+        syncMsg: 'Đang ghi dữ liệu lên Drive…',
+      ));
+
+      await DriveService.upload(account, {
+        'version': 1,
+        'syncedAt': DateTime.now().toIso8601String(),
+        'events': merged.map((e) => e.toJson()).toList(),
+      });
+
+      final timeStr = _timeStr(DateTime.now());
       safeSetState(state.copyWith(
         syncState: SyncState.done,
-        syncMsg: 'Đồng bộ thành công lúc $timeStr',
+        syncMsg: 'Đồng bộ thành công lúc $timeStr · ${account.email}',
       ));
-    });
+    } catch (e) {
+      safeSetState(state.copyWith(
+        syncState: SyncState.idle,
+        syncMsg: 'Lỗi: ${e.toString().replaceAll('Exception: ', '')}',
+      ));
+    }
   }
+
+  Future<void> disconnectGoogle() async {
+    await DriveService.signOut();
+    safeSetState(state.copyWith(
+      googleEmail: () => null,
+      syncState: SyncState.idle,
+      syncMsg: 'Đã ngắt kết nối Google. Dữ liệu vẫn ở máy này.',
+    ));
+  }
+
+  String _timeStr(DateTime dt) =>
+      '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
 
   // ── Export ──
 
@@ -317,10 +374,3 @@ class AppViewModel extends BaseViewModel<AppState> {
   }
 }
 
-// Minimal TimeOfDay shim (Flutter widget, but we only need hour/minute)
-class TimeOfDay {
-  final int hour;
-  final int minute;
-  const TimeOfDay({required this.hour, required this.minute});
-  factory TimeOfDay.fromDateTime(DateTime dt) => TimeOfDay(hour: dt.hour, minute: dt.minute);
-}

@@ -1,2 +1,2 @@
 #include "Generated.xcconfig"
-PRODUCT_BUNDLE_IDENTIFIER=com.example.mobileBase.dev
+PRODUCT_BUNDLE_IDENTIFIER=com.gpdigital.lichviet.dev

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/navigation/app_router.dart';
 import 'core/navigation/app_routes.dart';
@@ -12,10 +13,17 @@ class App extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ProviderScope(
         child: MaterialApp(
-          title: 'TVF Mobile',
+          title: 'Lịch Việt',
           theme: AppTheme.light,
           darkTheme: AppTheme.dark,
           themeMode: ThemeMode.system,
+          localizationsDelegates: const [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: const [Locale('vi'), Locale('en')],
+          locale: const Locale('vi'),
           debugShowCheckedModeBanner: false,
           navigatorKey: navigatorKey,
           initialRoute: AppRoutes.lichViet,

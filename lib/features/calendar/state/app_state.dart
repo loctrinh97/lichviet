@@ -22,11 +22,13 @@ class AppState {
   final String wxErr;
   final int? wxAt;
   final bool wxCached;
+  final bool wxLocating;
   final bool tvOpen;
   final bool dropOver;
   final String importMsg;
   final SyncState syncState;
   final String syncMsg;
+  final String? googleEmail;
   final bool splashVisible;
 
   const AppState({
@@ -45,11 +47,13 @@ class AppState {
     this.wxErr = '',
     this.wxAt,
     this.wxCached = false,
+    this.wxLocating = false,
     this.tvOpen = false,
     this.dropOver = false,
     this.importMsg = 'Chưa import file nào',
     this.syncState = SyncState.idle,
     this.syncMsg = 'Chưa kết nối. Dữ liệu chỉ ở máy này.',
+    this.googleEmail,
     this.splashVisible = true,
   });
 
@@ -69,11 +73,13 @@ class AppState {
     String? wxErr,
     int? Function()? wxAt,
     bool? wxCached,
+    bool? wxLocating,
     bool? tvOpen,
     bool? dropOver,
     String? importMsg,
     SyncState? syncState,
     String? syncMsg,
+    String? Function()? googleEmail,
     bool? splashVisible,
   }) {
     return AppState(
@@ -92,11 +98,13 @@ class AppState {
       wxErr: wxErr ?? this.wxErr,
       wxAt: wxAt != null ? wxAt() : this.wxAt,
       wxCached: wxCached ?? this.wxCached,
+      wxLocating: wxLocating ?? this.wxLocating,
       tvOpen: tvOpen ?? this.tvOpen,
       dropOver: dropOver ?? this.dropOver,
       importMsg: importMsg ?? this.importMsg,
       syncState: syncState ?? this.syncState,
       syncMsg: syncMsg ?? this.syncMsg,
+      googleEmail: googleEmail != null ? googleEmail() : this.googleEmail,
       splashVisible: splashVisible ?? this.splashVisible,
     );
   }

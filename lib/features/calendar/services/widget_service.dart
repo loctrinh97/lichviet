@@ -5,11 +5,11 @@ import 'lunar_calendar.dart';
 
 // Android widget provider class name
 const _androidWidgetClass =
-    'com.example.mobile_base.LichVietWidgetProvider';
+    'com.gpdigital.lichviet.LichVietWidgetProvider';
 
 class WidgetService {
   static const _channel =
-      MethodChannel('com.example.mobile_base/widget');
+      MethodChannel('com.gpdigital.lichviet/widget');
 
   static Future<void> updateWidget() async {
     final now = DateTime.now();
