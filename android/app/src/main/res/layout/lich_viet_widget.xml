@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/widget_background"
+    android:padding="12dp"
+    android:gravity="center_vertical">
+
+    <!-- Row 1: weekday + solar date -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:id="@+id/widget_weekday"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textSize="10sp"
+            android:textColor="#9397AB"
+            android:letterSpacing="0.1"
+            android:textAllCaps="true"
+            android:text="T6" />
+
+        <TextView
+            android:id="@+id/widget_solar_day"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="32sp"
+            android:textStyle="bold"
+            android:textColor="#E9E9ED"
+            android:fontFamily="sans-serif-medium"
+            android:text="4" />
+    </LinearLayout>
+
+    <!-- Row 2: lunar date + can chi -->
+    <TextView
+        android:id="@+id/widget_lunar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="11sp"
+        android:textColor="#9184D9"
+        android:text="Âm 23/7 · Quý Tỵ"
+
+        android:layout_marginTop="2dp" />
+
+    <!-- Row 3: hoàng đạo / hắc đạo -->
+    <TextView
+        android:id="@+id/widget_auspicious"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="10sp"
+        android:textColor="#9184D9"
+        android:text="Hoàng đạo"
+        android:layout_marginTop="2dp" />
+
+    <!-- Row 4: holiday (visible only when non-empty) -->
+    <TextView
+        android:id="@+id/widget_holiday"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="9sp"
+        android:textColor="#B5ABFC"
+        android:textStyle="bold"
+        android:layout_marginTop="2dp"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:text="" />
+
+</LinearLayout>
