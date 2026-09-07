@@ -291,36 +291,45 @@ class AppViewModel extends BaseViewModel<AppState> {
         syncMsg: 'Đang đọc dữ liệu từ Drive…',
       ));
 
-      final remote = await DriveService.download(account);
-      final localEvents = state.events;
+      // ── Step 1: Merge với Drive (bỏ qua nếu Drive full) ──
+      String driveNote = '';
+      try {
+        final remote = await DriveService.download(account);
+        final localEvents = state.events;
 
-      List<EventModel> merged = localEvents;
-      if (remote != null) {
-        final remoteEvents = (remote['events'] as List? ?? [])
-            .map((e) => EventModel.fromJson(e as Map<String, dynamic>))
-            .toList();
-        // Merge: newer updatedAt wins per id
-        final map = <String, EventModel>{};
-        for (final e in [...remoteEvents, ...localEvents]) {
-          final existing = map[e.id];
-          if (existing == null || e.updatedAt > existing.updatedAt) {
-            map[e.id] = e;
+        List<EventModel> merged = localEvents;
+        if (remote != null) {
+          final remoteEvents = (remote['events'] as List? ?? [])
+              .map((e) => EventModel.fromJson(e as Map<String, dynamic>))
+              .toList();
+          final map = <String, EventModel>{};
+          for (final e in [...remoteEvents, ...localEvents]) {
+            final existing = map[e.id];
+            if (existing == null || e.updatedAt > existing.updatedAt) {
+              map[e.id] = e;
+            }
           }
+          merged = map.values.toList();
         }
-        merged = map.values.toList();
+        safeSetState(state.copyWith(
+          events: merged,
+          syncMsg: 'Đang ghi dữ liệu lên Drive…',
+        ));
+        await DriveService.upload(account, {
+          'version': 1,
+          'syncedAt': DateTime.now().toIso8601String(),
+          'events': merged.map((e) => e.toJson()).toList(),
+        });
+      } catch (driveErr) {
+        final msg = driveErr.toString();
+        if (msg.contains('quota') || msg.contains('storageQuota') || msg.contains('403')) {
+          driveNote = ' · Drive bị đầy, chỉ đọc GCal';
+        } else {
+          driveNote = ' · Drive lỗi';
+        }
       }
 
-      safeSetState(state.copyWith(
-        events: merged,
-        syncMsg: 'Đang ghi dữ liệu lên Drive…',
-      ));
-
-      await DriveService.upload(account, {
-        'version': 1,
-        'syncedAt': DateTime.now().toIso8601String(),
-        'events': merged.map((e) => e.toJson()).toList(),
-      });
-
+      // ── Step 2: Fetch Google Calendar (độc lập với Drive) ──
       safeSetState(state.copyWith(syncMsg: 'Đang đọc Google Calendar…'));
       final gcalEvents = await DriveService.fetchCalendarEvents(account);
 
@@ -328,7 +337,7 @@ class AppViewModel extends BaseViewModel<AppState> {
       safeSetState(state.copyWith(
         gcalEvents: gcalEvents,
         syncState: SyncState.done,
-        syncMsg: 'Đồng bộ thành công lúc $timeStr · ${account.email} · ${gcalEvents.length} sự kiện GCal',
+        syncMsg: 'Đồng bộ lúc $timeStr · ${gcalEvents.length} sự kiện$driveNote',
       ));
     } catch (e) {
       safeSetState(state.copyWith(
