@@ -264,19 +264,25 @@ class AppViewModel extends BaseViewModel<AppState> {
 
   Future<void> _reverseGeocode(double lat, double lon) async {
     try {
+      // Nominatim OpenStreetMap — free, no key required
       final uri = Uri.parse(
-          'https://geocoding-api.open-meteo.com/v1/reverse?latitude=$lat&longitude=$lon&language=vi');
-      final r = await http.get(uri);
-      String cityName = 'Vị trí của bạn';
+          'https://nominatim.openstreetmap.org/reverse?lat=$lat&lon=$lon&format=json&accept-language=vi');
+      final r = await http.get(uri, headers: {'User-Agent': 'LichViet/1.0'});
+      String name = 'Vị trí của bạn';
       String admin = '';
       if (r.statusCode == 200) {
         final j = jsonDecode(r.body) as Map<String, dynamic>;
-        cityName = (j['name'] as String?)?.isNotEmpty == true
-            ? j['name'] as String
-            : 'Vị trí của bạn';
-        admin = (j['admin1'] as String?) ?? '';
+        final addr = j['address'] as Map<String, dynamic>? ?? {};
+        // Pick the most specific non-null locality name
+        name = (addr['suburb'] ?? addr['quarter'] ?? addr['neighbourhood'] ??
+                addr['village'] ?? addr['town'] ?? addr['city'] ??
+                addr['county'] ?? addr['state'] ?? j['display_name'] ?? 'Vị trí của bạn')
+            as String;
+        admin = (addr['city'] ?? addr['town'] ?? addr['state'] ?? '') as String;
+        // Avoid duplicating name and admin when they're the same
+        if (admin == name) admin = (addr['state'] ?? '') as String;
       }
-      final city = WeatherCity(name: cityName, admin: admin, lat: lat, lon: lon);
+      final city = WeatherCity(name: name, admin: admin, lat: lat, lon: lon);
       await _fetchWeather(city);
     } catch (_) {
       final city = WeatherCity(name: 'Vị trí của bạn', admin: '', lat: lat, lon: lon);
