@@ -43,6 +43,7 @@ class AppViewModel extends BaseViewModel<AppState> {
   }
 
   static const _prefGoogleEmail = 'google_email';
+  static const _prefTheme       = 'app_theme';
   static const _prefName        = 'profile_name';
   static const _prefBirthDate   = 'profile_birth_date';
   static const _prefBirthTime   = 'profile_birth_time';
@@ -52,6 +53,10 @@ class AppViewModel extends BaseViewModel<AppState> {
 
   Future<void> _restoreSession() async {
     final prefs = await SharedPreferences.getInstance();
+
+    // Restore theme
+    final theme = prefs.getString(_prefTheme);
+    if (theme != null) safeSetState(state.copyWith(theme: theme));
 
     // Restore profile
     final name       = prefs.getString(_prefName) ?? '';
@@ -131,7 +136,11 @@ class AppViewModel extends BaseViewModel<AppState> {
 
   void setTab(AppTab tab) => safeSetState(state.copyWith(tab: tab));
 
-  void setTheme(String theme) => safeSetState(state.copyWith(theme: theme));
+  Future<void> setTheme(String theme) async {
+    safeSetState(state.copyWith(theme: theme));
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_prefTheme, theme);
+  }
 
   void replaySplash() {
     safeSetState(state.copyWith(splashVisible: true));
@@ -370,6 +379,7 @@ class AppViewModel extends BaseViewModel<AppState> {
         safeSetState(state.copyWith(
           profile: profile.copyWith(name: googleName),
         ));
+        _saveProfile();
       }
 
       safeSetState(state.copyWith(
