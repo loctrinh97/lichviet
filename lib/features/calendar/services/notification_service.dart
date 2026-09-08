@@ -12,7 +12,7 @@ class NotificationService {
     'lichviet_daily',
     'Nhắc nhở Lịch Việt',
     description: 'Thông báo sự kiện, ngày lễ và âm lịch',
-    importance: Importance.defaultImportance,
+    importance: Importance.high,
   );
 
   static Future<void> init() async {
@@ -83,8 +83,8 @@ class NotificationService {
             _channel.id,
             _channel.name,
             channelDescription: _channel.description,
-            importance: Importance.defaultImportance,
-            priority: Priority.defaultPriority,
+            importance: Importance.high,
+            priority: Priority.high,
             icon: '@mipmap/ic_launcher',
           ),
           iOS: const DarwinNotificationDetails(
