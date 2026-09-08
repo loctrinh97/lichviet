@@ -21,6 +21,8 @@ class WidgetService {
     // Write data to FlutterSharedPreferences — same store the
     // Android AppWidgetProvider reads via "flutter.<key>" prefix.
     final prefs = await SharedPreferences.getInstance();
+    final storedTheme = prefs.getString('app_theme') ?? 'dark';
+    await prefs.setString('widget_theme',  storedTheme);
     await prefs.setString('solar_day',     '${now.day}');
     await prefs.setString('solar_weekday', _weekday(now.weekday));
     await prefs.setString('lunar_day',     '${al.day}');

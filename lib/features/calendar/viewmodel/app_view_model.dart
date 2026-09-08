@@ -164,6 +164,7 @@ class AppViewModel extends BaseViewModel<AppState> {
     safeSetState(state.copyWith(theme: theme));
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_prefTheme, theme);
+    WidgetService.updateWidget();
   }
 
   Future<void> obDone() async {
