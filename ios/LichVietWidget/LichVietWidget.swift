@@ -64,28 +64,37 @@ private extension Color {
     static let nocText    = Color(red: 0.914, green: 0.914, blue: 0.929)  // #E9E9ED
 }
 
+// MARK: - Lock Screen (accessoryInline) view
+struct LockScreenInlineView: View {
+    let entry: LunarEntry
+    var body: some View {
+        let lunar = "Âm \(entry.lunarDay)/\(entry.lunarMonth) · \(entry.canChiDay)"
+        Text(lunar)
+    }
+}
+
 // MARK: - Lock Screen (accessoryRectangular) view
 struct LockScreenRectView: View {
     let entry: LunarEntry
     var body: some View {
-        VStack(alignment: .leading, spacing: 1) {
+        VStack(alignment: .leading, spacing: 2) {
             HStack(alignment: .firstTextBaseline, spacing: 4) {
                 Text(entry.weekday.uppercased())
-                    .font(.system(size: 9, weight: .semibold))
+                    .font(.system(size: 11, weight: .semibold))
                     .foregroundColor(.secondary)
                 Text(entry.solarDay)
-                    .font(.system(size: 20, weight: .bold, design: .rounded))
+                    .font(.system(size: 22, weight: .bold, design: .rounded))
                 Spacer()
                 Text(entry.isAuspicious ? "Hoàng đạo" : "Hắc đạo")
-                    .font(.system(size: 8, weight: .medium))
+                    .font(.system(size: 11, weight: .medium))
                     .foregroundColor(entry.isAuspicious ? Color.nocGood : Color.nocBad)
             }
             Text("Âm \(entry.lunarDay)/\(entry.lunarMonth) · \(entry.canChiDay)")
-                .font(.system(size: 10))
+                .font(.system(size: 12))
                 .foregroundColor(.secondary)
             if !entry.holiday.isEmpty {
                 Text(entry.holiday)
-                    .font(.system(size: 9, weight: .medium))
+                    .font(.system(size: 12, weight: .medium))
                     .foregroundColor(Color.nocAccent)
                     .lineLimit(1)
             }
@@ -98,11 +107,11 @@ struct LockScreenRectView: View {
 struct LockScreenCircleView: View {
     let entry: LunarEntry
     var body: some View {
-        VStack(spacing: 0) {
+        VStack(spacing: 1) {
             Text(entry.solarDay)
-                .font(.system(size: 22, weight: .bold, design: .rounded))
+                .font(.system(size: 24, weight: .bold, design: .rounded))
             Text(entry.lunarDay + "/" + entry.lunarMonth)
-                .font(.system(size: 9))
+                .font(.system(size: 11))
                 .foregroundColor(.secondary)
         }
     }
@@ -154,6 +163,8 @@ struct LichVietWidgetEntryView: View {
 
     var body: some View {
         switch family {
+        case .accessoryInline:
+            LockScreenInlineView(entry: entry)
         case .accessoryRectangular:
             LockScreenRectView(entry: entry)
         case .accessoryCircular:
@@ -171,13 +182,18 @@ struct LichVietWidget: Widget {
 
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: LichVietProvider()) { entry in
-            LichVietWidgetEntryView(entry: entry)
-                .containerBackground(.fill.tertiary, for: .widget)
+            if #available(iOSApplicationExtension 17.0, *) {
+                LichVietWidgetEntryView(entry: entry)
+                    .containerBackground(.fill.tertiary, for: .widget)
+            } else {
+                LichVietWidgetEntryView(entry: entry)
+            }
         }
         .configurationDisplayName("Lịch Việt")
         .description("Âm lịch · Can chi · Ngày hoàng đạo")
         .supportedFamilies([
             .systemSmall,
+            .accessoryInline,
             .accessoryCircular,
             .accessoryRectangular,
         ])
