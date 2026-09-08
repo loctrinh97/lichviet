@@ -137,5 +137,34 @@ class NotificationService {
     );
   }
 
+  /// Fire a test notification after [seconds] seconds.
+  static Future<void> sendTestNotification({int seconds = 5}) async {
+    await init();
+    final tzTime = tz.TZDateTime.now(tz.local).add(Duration(seconds: seconds));
+    await _plugin.zonedSchedule(
+      8888,
+      'Test · ${DateTime.now().day}/${DateTime.now().month}',
+      'Hôm nay · Tết Trung Thu · Họp nhóm 9:00 · Ngày Rằm âm lịch',
+      tzTime,
+      NotificationDetails(
+        android: AndroidNotificationDetails(
+          _channel.id, _channel.name,
+          channelDescription: _channel.description,
+          importance: Importance.high,
+          priority: Priority.high,
+          icon: '@mipmap/ic_launcher',
+        ),
+        iOS: const DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+        ),
+      ),
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
+    );
+  }
+
   static Future<void> cancelAll() => _plugin.cancelAll();
 }

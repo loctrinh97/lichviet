@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../model/event_model.dart';
+import '../../services/notification_service.dart';
 import '../../services/lunar_calendar.dart';
 import '../../services/astrology.dart';
 import '../../state/app_state.dart';
@@ -135,10 +136,6 @@ class _ProfileTabState extends ConsumerState<ProfileTab> {
           Text('Cá nhân',
               style: TextStyle(fontWeight: FontWeight.w500, fontSize: 26, letterSpacing: -0.5, color: t.text)),
           const SizedBox(height: 4),
-          Text('Hồ sơ lưu trên máy bạn. Không có tài khoản đăng nhập.',
-              style: TextStyle(fontSize: 12.5, color: t.muted)),
-
-          const SizedBox(height: 24),
           _sectionLabel('HỒ SƠ', t),
           const SizedBox(height: 12),
 
@@ -260,6 +257,17 @@ class _ProfileTabState extends ConsumerState<ProfileTab> {
               })),
             ],
           ),
+
+          const SizedBox(height: 8),
+          _outlineBtn('🔔 Test notification (5 giây)', t, () async {
+            await NotificationService.sendTestNotification(seconds: 5);
+            if (!context.mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: const Text('Notification sẽ xuất hiện sau 5 giây — thoát app để thấy'),
+              backgroundColor: t.surface,
+              duration: const Duration(seconds: 4),
+            ));
+          }),
 
           const SizedBox(height: 16),
           Consumer(builder: (ctx, ref2, _) {
