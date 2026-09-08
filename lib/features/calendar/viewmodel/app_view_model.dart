@@ -285,7 +285,10 @@ class AppViewModel extends BaseViewModel<AppState> {
     _fetchWeather(city);
   }
 
-  void clearSuggestions() => safeSetState(state.copyWith(citySuggestions: []));
+  void clearSuggestions() {
+    _suggestionTimer?.cancel();
+    safeSetState(state.copyWith(citySuggestions: []));
+  }
 
   void submitCity() {
     final name = state.cityDraft.trim();

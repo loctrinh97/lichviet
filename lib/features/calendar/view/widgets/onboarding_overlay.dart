@@ -163,6 +163,7 @@ class _OnboardingOverlayState extends ConsumerState<OnboardingOverlay> {
                           onChanged: (v) {
                             if (_suppressCitySearch) {
                               _suppressCitySearch = false;
+                              vm.clearSuggestions();
                               return;
                             }
                             vm.setCityDraft(v);
@@ -211,6 +212,7 @@ class _OnboardingOverlayState extends ConsumerState<OnboardingOverlay> {
                               if (i > 0) Divider(color: t.divider, height: 1),
                               GestureDetector(
                                 onTap: () {
+                                  vm.clearSuggestions();
                                   _suppressCitySearch = true;
                                   _cityCtrl.text = c.displayName;
                                   vm.selectSuggestion(c);
