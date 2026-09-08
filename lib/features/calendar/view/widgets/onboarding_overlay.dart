@@ -15,6 +15,7 @@ class OnboardingOverlay extends ConsumerStatefulWidget {
 class _OnboardingOverlayState extends ConsumerState<OnboardingOverlay> {
   final _nameCtrl = TextEditingController();
   final _cityCtrl = TextEditingController();
+  bool _suppressCitySearch = false;
 
   @override
   void dispose() {
@@ -159,7 +160,13 @@ class _OnboardingOverlayState extends ConsumerState<OnboardingOverlay> {
                           hint: 'Nhập địa chỉ',
                           t: t,
                           centered: true,
-                          onChanged: (v) => vm.setCityDraft(v),
+                          onChanged: (v) {
+                            if (_suppressCitySearch) {
+                              _suppressCitySearch = false;
+                              return;
+                            }
+                            vm.setCityDraft(v);
+                          },
                           onSubmitted: (v) {
                             if (v.trim().isNotEmpty) vm.submitCity();
                           },
@@ -172,7 +179,9 @@ class _OnboardingOverlayState extends ConsumerState<OnboardingOverlay> {
                           await vm.useGeo();
                           final city = ref.read(appViewModelProvider).city;
                           if (city != null && mounted) {
+                            _suppressCitySearch = true;
                             _cityCtrl.text = city.displayName;
+                            vm.clearSuggestions();
                           }
                         },
                         child: Container(
@@ -202,8 +211,9 @@ class _OnboardingOverlayState extends ConsumerState<OnboardingOverlay> {
                               if (i > 0) Divider(color: t.divider, height: 1),
                               GestureDetector(
                                 onTap: () {
+                                  _suppressCitySearch = true;
+                                  _cityCtrl.text = c.displayName;
                                   vm.selectSuggestion(c);
-                                  _cityCtrl.clear();
                                   FocusScope.of(context).unfocus();
                                 },
                                 child: Container(
