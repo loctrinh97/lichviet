@@ -30,6 +30,8 @@ class _OnboardingOverlayState extends ConsumerState<OnboardingOverlay> {
     final t = widget.theme;
     final ps = state.profile;
 
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+
     return AnimatedOpacity(
       opacity: 1,
       duration: const Duration(milliseconds: 300),
@@ -56,7 +58,7 @@ class _OnboardingOverlayState extends ConsumerState<OnboardingOverlay> {
                 padding: EdgeInsets.fromLTRB(
                   20,
                   MediaQuery.of(context).padding.top + 56,
-                  20, 40,
+                  20, 40 + bottomInset,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -149,24 +151,27 @@ class _OnboardingOverlayState extends ConsumerState<OnboardingOverlay> {
                     const SizedBox(height: 16),
 
                     // City
-                    _FieldLabel('Thành phố', t),
+                    _FieldLabel('Địa chỉ', t),
                     Row(children: [
                       Expanded(
                         child: _InputField(
                           controller: _cityCtrl,
-                          hint: 'Hà Nội',
+                          hint: 'Nhập địa chỉ',
                           t: t,
                           centered: true,
-                          onChanged: (_) {},
+                          onChanged: (v) => vm.setCityDraft(v),
                           onSubmitted: (v) {
-                            if (v.trim().isNotEmpty) vm.setCityDraft(v.trim());
-                            vm.submitCity();
+                            if (v.trim().isNotEmpty) vm.submitCity();
                           },
                         ),
                       ),
                       const SizedBox(width: 8),
                       GestureDetector(
-                        onTap: vm.useGeo,
+                        onTap: () async {
+                          await vm.useGeo();
+                          _cityCtrl.clear();
+                          FocusScope.of(context).unfocus();
+                        },
                         child: Container(
                           width: 40, height: 40,
                           decoration: BoxDecoration(
@@ -177,7 +182,44 @@ class _OnboardingOverlayState extends ConsumerState<OnboardingOverlay> {
                         ),
                       ),
                     ]),
-                    if (state.city != null) ...[
+                    // Suggestions dropdown
+                    if (state.citySuggestions.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: t.surface,
+                          borderRadius: BorderRadius.circular(LvColors.radiusMd),
+                          border: Border.all(color: t.divider),
+                        ),
+                        child: Column(
+                          children: state.citySuggestions.asMap().entries.map((entry) {
+                            final i = entry.key;
+                            final c = entry.value;
+                            return Column(children: [
+                              if (i > 0) Divider(color: t.divider, height: 1),
+                              GestureDetector(
+                                onTap: () {
+                                  vm.selectSuggestion(c);
+                                  _cityCtrl.clear();
+                                  FocusScope.of(context).unfocus();
+                                },
+                                child: Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                                  child: Row(children: [
+                                    Icon(Icons.location_on_outlined, color: t.muted, size: 14),
+                                    const SizedBox(width: 8),
+                                    Expanded(child: Text(c.displayName,
+                                        style: TextStyle(fontSize: 13, color: t.text))),
+                                  ]),
+                                ),
+                              ),
+                            ]);
+                          }).toList(),
+                        ),
+                      ),
+                    ],
+                    if (state.city != null && state.citySuggestions.isEmpty) ...[
                       const SizedBox(height: 6),
                       Row(children: [
                         Icon(Icons.location_on_outlined, size: 13, color: LvColors.event),
