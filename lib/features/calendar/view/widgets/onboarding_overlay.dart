@@ -168,9 +168,12 @@ class _OnboardingOverlayState extends ConsumerState<OnboardingOverlay> {
                       const SizedBox(width: 8),
                       GestureDetector(
                         onTap: () async {
-                          await vm.useGeo();
-                          _cityCtrl.clear();
                           FocusScope.of(context).unfocus();
+                          await vm.useGeo();
+                          final city = ref.read(appViewModelProvider).city;
+                          if (city != null && mounted) {
+                            _cityCtrl.text = city.displayName;
+                          }
                         },
                         child: Container(
                           width: 40, height: 40,
@@ -218,15 +221,6 @@ class _OnboardingOverlayState extends ConsumerState<OnboardingOverlay> {
                           }).toList(),
                         ),
                       ),
-                    ],
-                    if (state.city != null && state.citySuggestions.isEmpty) ...[
-                      const SizedBox(height: 6),
-                      Row(children: [
-                        Icon(Icons.location_on_outlined, size: 13, color: LvColors.event),
-                        const SizedBox(width: 4),
-                        Text(state.city!.displayName,
-                            style: TextStyle(fontSize: 12, color: LvColors.event)),
-                      ]),
                     ],
 
                     const SizedBox(height: 28),
