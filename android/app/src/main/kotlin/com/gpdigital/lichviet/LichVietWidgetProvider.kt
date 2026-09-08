@@ -58,19 +58,24 @@ class LichVietWidgetProvider : AppWidgetProvider() {
 
             views.setTextViewText(R.id.widget_weekday,   weekday.uppercase())
             views.setTextColor(R.id.widget_weekday,   colorWeekday)
+            views.setFloat(R.id.widget_weekday,   "setTextSize", 13f)
 
             views.setTextViewText(R.id.widget_solar_day, solarDay)
             views.setTextColor(R.id.widget_solar_day, colorSolarDay)
+            views.setFloat(R.id.widget_solar_day, "setTextSize", 36f)
 
             views.setTextViewText(R.id.widget_lunar, "Âm $lunarDay/$lunarMonth · $canChiDay")
             views.setTextColor(R.id.widget_lunar, colorAccent)
+            views.setFloat(R.id.widget_lunar, "setTextSize", 13f)
 
             views.setTextViewText(R.id.widget_auspicious, if (isAusp) "Hoàng đạo" else "Hắc đạo")
             views.setTextColor(R.id.widget_auspicious, if (isAusp) colorAuspYes else colorAuspNo)
+            views.setFloat(R.id.widget_auspicious, "setTextSize", 12f)
 
             if (holiday.isNotBlank()) {
                 views.setTextViewText(R.id.widget_holiday, holiday)
                 views.setTextColor(R.id.widget_holiday, colorHoliday)
+                views.setFloat(R.id.widget_holiday, "setTextSize", 12f)
                 views.setViewVisibility(R.id.widget_holiday, View.VISIBLE)
             } else {
                 views.setViewVisibility(R.id.widget_holiday, View.GONE)
