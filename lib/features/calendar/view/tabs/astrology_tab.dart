@@ -15,22 +15,30 @@ class AstrologyTab extends ConsumerWidget {
     final vm = ref.read(appViewModelProvider.notifier);
     final t = theme;
 
-    // Compute from profile
     final ps = state.profile;
-    final bpParts = ps.birthDate.split('-').map(int.parse).toList();
-    final alSinh = LunarCalendar.solar2lunar(bpParts[2], bpParts[1], bpParts[0]);
-    final ccSinh = LunarCalendar.canChi(alSinh);
-
     final today = DateTime.now();
     final alToday = LunarCalendar.solar2lunar(today.day, today.month, today.year);
     final ccToday = LunarCalendar.canChi(alToday);
+    final totHomNay = LunarCalendar.ngayTot(alToday.month, ccToday.chiDay);
 
+    // Parse birth date safely
+    final bpRaw = ps.birthDate;
+    final bpParts = bpRaw.isNotEmpty
+        ? bpRaw.split('-').map(int.tryParse).toList()
+        : <int?>[];
+    final hasBirth = bpParts.length == 3 && bpParts.every((v) => v != null);
+
+    if (!hasBirth) {
+      return _NoBirthView(theme: t, alToday: alToday, ccToday: ccToday, totHomNay: totHomNay, vm: vm);
+    }
+
+    final alSinh = LunarCalendar.solar2lunar(bpParts[2]!, bpParts[1]!, bpParts[0]!);
+    final ccSinh = LunarCalendar.canChi(alSinh);
     final cg = AstrologyContent.conGiap[ccSinh.chiYear] ?? AstrologyContent.conGiap['Tý']!;
     final qh = AstrologyContent.quanHe(ccSinh.chiYear, ccToday.chiDay);
     final luan = AstrologyContent.homNay[qh]!;
     final na = AstrologyContent.napAm(alSinh.year);
     final hk = AstrologyContent.hopKhac(ccSinh.chiYear);
-    final totHomNay = LunarCalendar.ngayTot(alToday.month, ccToday.chiDay);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
@@ -145,6 +153,132 @@ class AstrologyTab extends ConsumerWidget {
           //     ),
           //   ],
           // ),
+        ],
+      ),
+    );
+  }
+}
+
+class _NoBirthView extends StatelessWidget {
+  const _NoBirthView({
+    required this.theme, required this.alToday, required this.ccToday,
+    required this.totHomNay, required this.vm,
+  });
+  final LvTheme theme;
+  final LunarDate alToday;
+  final CanChi ccToday;
+  final bool totHomNay;
+  final AppViewModel vm;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = theme;
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('TỬ VI HÔM NAY', style: TextStyle(fontSize: 12, letterSpacing: 1.2, color: t.muted)),
+          const SizedBox(height: 16),
+
+          // Ngày hôm nay — không cần thông tin cá nhân
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: t.surface,
+              borderRadius: BorderRadius.circular(LvColors.radiusLg),
+              border: Border.all(color: t.divider),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Hôm nay · ${alToday.day}/${alToday.month} âm lịch',
+                    style: TextStyle(fontSize: 13, color: t.muted)),
+                const SizedBox(height: 8),
+                Text(ccToday.day,
+                    style: TextStyle(fontWeight: FontWeight.w500, fontSize: 24,
+                        letterSpacing: -0.5, color: t.text)),
+                const SizedBox(height: 4),
+                Row(children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(9999),
+                      border: Border.all(
+                          color: totHomNay ? LvColors.event : t.divider),
+                      color: totHomNay
+                          ? LvColors.event.withValues(alpha: 0.1)
+                          : Colors.transparent,
+                    ),
+                    child: Text(
+                      totHomNay ? 'Hoàng đạo' : 'Hắc đạo',
+                      style: TextStyle(
+                          fontSize: 12, fontWeight: FontWeight.w500,
+                          color: totHomNay ? LvColors.event : t.muted),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text('Chi ${ccToday.chiDay} · Tháng ${alToday.month} âm',
+                      style: TextStyle(fontSize: 12, color: t.muted)),
+                ]),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 24),
+
+          // CTA nhắc điền thông tin
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(LvColors.radiusLg),
+              border: Border.all(color: t.accent.withValues(alpha: 0.4)),
+              color: t.accent.withValues(alpha: 0.06),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(children: [
+                  Icon(Icons.person_outline, color: t.accent, size: 18),
+                  const SizedBox(width: 8),
+                  Text('Thêm thông tin cá nhân',
+                      style: TextStyle(fontWeight: FontWeight.w500,
+                          fontSize: 15, color: t.text)),
+                ]),
+                const SizedBox(height: 8),
+                Text(
+                  'Điền ngày sinh để xem con giáp, mệnh, luận giải tử vi theo ngày và các thông tin phong thuỷ cá nhân.',
+                  style: TextStyle(fontSize: 13, height: 1.6, color: t.muted),
+                ),
+                const SizedBox(height: 16),
+                GestureDetector(
+                  onTap: () => vm.replayOb(),
+                  child: Container(
+                    width: double.infinity, height: 42,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(LvColors.radiusMd),
+                      border: Border.all(color: t.accent),
+                      color: t.accent.withValues(alpha: 0.12),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text('Điền thông tin ngay',
+                        style: TextStyle(fontWeight: FontWeight.w500,
+                            fontSize: 14, color: t.accent)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 16),
+          Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Icon(Icons.lock_outline, size: 13, color: t.dim),
+            const SizedBox(width: 6),
+            Expanded(child: Text(
+              'Mọi thông tin lưu trên máy bạn, không gửi đi đâu.',
+              style: TextStyle(fontSize: 12, height: 1.6, color: t.dim),
+            )),
+          ]),
         ],
       ),
     );
