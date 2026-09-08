@@ -37,7 +37,7 @@ class AstrologyTab extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('TỬ VI HÔM NAY', style: TextStyle(fontSize: 11, letterSpacing: 1.2, color: t.muted)),
+          Text('TỬ VI HÔM NAY', style: TextStyle(fontSize: 12, letterSpacing: 1.2, color: t.muted)),
           const SizedBox(height: 5),
           Text('${cg.name} · ${ccSinh.year}',
               style: TextStyle(fontWeight: FontWeight.w500, fontSize: 26, letterSpacing: -0.5, color: t.text)),
@@ -140,7 +140,7 @@ class AstrologyTab extends ConsumerWidget {
           //     Expanded(
           //       child: Text(
           //         'Luận giải lấy từ kho nội dung tĩnh trong app, chạy offline. Phân tích AI: tuỳ chọn, cấu hình sau.',
-          //         style: TextStyle(fontSize: 11.5, height: 1.6, color: t.dim),
+          //         style: TextStyle(fontSize: 12, height: 1.6, color: t.dim),
           //       ),
           //     ),
           //   ],
@@ -175,12 +175,12 @@ class _InfoCard extends StatelessWidget {
           Row(children: [
             Icon(icon, color: t.muted, size: 13),
             const SizedBox(width: 6),
-            Text(label, style: TextStyle(fontSize: 10.5, letterSpacing: 0.8, color: t.muted)),
+            Text(label, style: TextStyle(fontSize: 12, letterSpacing: 0.8, color: t.muted)),
           ]),
           const SizedBox(height: 6),
           Text(value, style: TextStyle(fontWeight: FontWeight.w500, fontSize: 16, color: t.text)),
           const SizedBox(height: 3),
-          Text(sub, style: TextStyle(fontSize: 11.5, color: t.dim), overflow: TextOverflow.ellipsis),
+          Text(sub, style: TextStyle(fontSize: 12, color: t.dim), overflow: TextOverflow.ellipsis),
         ],
       ),
     );

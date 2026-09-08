@@ -137,7 +137,7 @@ class _DetailSheetState extends ConsumerState<DetailSheet> {
                         color: tot ? t.accent.withOpacity(0.10) : Colors.transparent,
                       ),
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text('Ngày tốt/xấu', style: TextStyle(fontSize: 10.5, letterSpacing: 0.8, color: t.muted)),
+                        Text('Ngày tốt/xấu', style: TextStyle(fontSize: 12, letterSpacing: 0.8, color: t.muted)),
                         const SizedBox(height: 5),
                         Text(tot ? 'Hoàng đạo' : 'Hắc đạo',
                             style: TextStyle(fontWeight: FontWeight.w500, fontSize: 15, color: t.text)),
@@ -150,7 +150,7 @@ class _DetailSheetState extends ConsumerState<DetailSheet> {
               ),
 
               const SizedBox(height: 20),
-              Text('GIỜ HOÀNG ĐẠO', style: TextStyle(fontSize: 11, letterSpacing: 1.2, color: t.muted)),
+              Text('GIỜ HOÀNG ĐẠO', style: TextStyle(fontSize: 12, letterSpacing: 1.2, color: t.muted)),
               const SizedBox(height: 10),
               GridView.count(
                 crossAxisCount: 2, shrinkWrap: true,
@@ -188,7 +188,7 @@ class _DetailSheetState extends ConsumerState<DetailSheet> {
               ),
 
               const SizedBox(height: 20),
-              Text('SỰ KIỆN', style: TextStyle(fontSize: 11, letterSpacing: 1.2, color: t.muted)),
+              Text('SỰ KIỆN', style: TextStyle(fontSize: 12, letterSpacing: 1.2, color: t.muted)),
 
               ...events.map((e) => Column(
                 children: [
@@ -268,7 +268,7 @@ class _DetailSheetState extends ConsumerState<DetailSheet> {
               const SizedBox(height: 8),
               Text(
                 'Đã lưu ${events.length} sự kiện trên thiết bị',
-                style: TextStyle(fontSize: 11, color: t.dim, fontFamily: 'monospace'),
+                style: TextStyle(fontSize: 12, color: t.dim, fontFamily: 'monospace'),
               ),
             ],
           ),
@@ -293,7 +293,7 @@ class _InfoBox extends StatelessWidget {
         border: Border.all(color: t.divider),
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(label.toUpperCase(), style: TextStyle(fontSize: 10.5, letterSpacing: 0.8, color: t.muted)),
+        Text(label.toUpperCase(), style: TextStyle(fontSize: 12, letterSpacing: 0.8, color: t.muted)),
         const SizedBox(height: 5),
         Text(value, style: TextStyle(fontWeight: FontWeight.w500, fontSize: 15, color: t.text)),
       ]),

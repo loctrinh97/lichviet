@@ -207,7 +207,7 @@ class _WeatherTabState extends ConsumerState<WeatherTab> {
           // Hourly
           if (!state.wxLocating && wx?.hourly != null) ...[
             const SizedBox(height: 24),
-            Text('THEO GIỜ', style: TextStyle(fontSize: 11, letterSpacing: 1.2, color: t.muted)),
+            Text('THEO GIỜ', style: TextStyle(fontSize: 12, letterSpacing: 1.2, color: t.muted)),
             const SizedBox(height: 12),
             _HourlyRow(wx: wx!, theme: t),
           ],
@@ -215,14 +215,14 @@ class _WeatherTabState extends ConsumerState<WeatherTab> {
           // Daily
           if (!state.wxLocating && wx?.daily != null) ...[
             const SizedBox(height: 24),
-            Text('7 NGÀY TỚI', style: TextStyle(fontSize: 11, letterSpacing: 1.2, color: t.muted)),
+            Text('7 NGÀY TỚI', style: TextStyle(fontSize: 12, letterSpacing: 1.2, color: t.muted)),
             const SizedBox(height: 8),
             ..._buildDays(wx!.daily!, t),
           ],
 
           // Footer
           const SizedBox(height: 16),
-          Text(_footer(state), style: TextStyle(fontSize: 11.5, color: t.dim)),
+          Text(_footer(state), style: TextStyle(fontSize: 12, color: t.dim)),
         ],
       ),
     );
@@ -380,7 +380,7 @@ class _StatCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label.toUpperCase(), style: TextStyle(fontSize: 10.5, letterSpacing: 0.8, color: t.muted)),
+            Text(label.toUpperCase(), style: TextStyle(fontSize: 12, letterSpacing: 0.8, color: t.muted)),
             const SizedBox(height: 5),
             Text(value, style: TextStyle(fontWeight: FontWeight.w500, fontSize: 19, color: t.text)),
           ],
@@ -431,13 +431,13 @@ class _HourlyRow extends StatelessWidget {
         ),
         child: Column(
           children: [
-            Text(label, style: TextStyle(fontSize: 11.5, color: t.muted)),
+            Text(label, style: TextStyle(fontSize: 12, color: t.muted)),
             const SizedBox(height: 9),
             Icon(icon, color: LvColors.accent400, size: 20),
             const SizedBox(height: 9),
             Text('$temp°', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 15, color: t.text)),
             const SizedBox(height: 3),
-            Text(rain, style: TextStyle(fontSize: 10.5, color: t.dim)),
+            Text(rain, style: TextStyle(fontSize: 12, color: t.dim)),
           ],
         ),
       ));

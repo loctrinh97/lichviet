@@ -119,7 +119,7 @@ class _TabBar extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(tab.$2,
                       style: TextStyle(
-                          fontSize: 10.5,
+                          fontSize: 12,
                           letterSpacing: 0.1,
                           fontWeight: FontWeight.w500,
                           color: on ? t.accent : t.dim)),

@@ -63,7 +63,7 @@ class _OnboardingOverlayState extends ConsumerState<OnboardingOverlay> {
                   children: [
                     // Header
                     Text('Bắt đầu',
-                        style: TextStyle(fontSize: 11, letterSpacing: 1.2, color: t.muted)),
+                        style: TextStyle(fontSize: 12, letterSpacing: 1.2, color: t.muted)),
                     const SizedBox(height: 6),
                     Text('Chào bạn',
                         style: TextStyle(
@@ -82,7 +82,7 @@ class _OnboardingOverlayState extends ConsumerState<OnboardingOverlay> {
                       state.googleEmail != null
                           ? 'Đã kết nối · ${state.googleEmail}'
                           : 'Đồng bộ lịch, Drive và lấy tên tự động.',
-                      style: TextStyle(fontSize: 11.5, height: 1.6, color: t.dim),
+                      style: TextStyle(fontSize: 12, height: 1.6, color: t.dim),
                     ),
 
                     // Divider
@@ -93,7 +93,7 @@ class _OnboardingOverlayState extends ConsumerState<OnboardingOverlay> {
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 12),
                           child: Text('hoặc tự nhập',
-                              style: TextStyle(fontSize: 11, letterSpacing: 1.0, color: t.dim)),
+                              style: TextStyle(fontSize: 12, letterSpacing: 1.0, color: t.dim)),
                         ),
                         Expanded(child: Divider(color: t.divider)),
                       ]),
@@ -107,7 +107,6 @@ class _OnboardingOverlayState extends ConsumerState<OnboardingOverlay> {
                       t: t,
                       onChanged: vm.setName,
                       initialValue: ps.name,
-                      centered: true,
                     ),
                     const SizedBox(height: 16),
 
@@ -150,42 +149,16 @@ class _OnboardingOverlayState extends ConsumerState<OnboardingOverlay> {
 
                     // City
                     _FieldLabel('Thành phố', t),
-                    Row(children: [
-                      Expanded(
-                        child: _InputField(
-                          controller: _cityCtrl,
-                          hint: 'Hà Nội',
-                          t: t,
-                          onChanged: (_) {},
-                          centered: true,
-                          onSubmitted: (v) {
-                            if (v.trim().isNotEmpty) vm.setCityDraft(v.trim());
-                            vm.submitCity();
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      GestureDetector(
-                        onTap: vm.useGeo,
-                        child: Container(
-                          width: 40, height: 40,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(LvColors.radiusMd),
-                            border: Border.all(color: t.accent),
-                          ),
-                          child: Icon(Icons.my_location, color: t.accent, size: 17),
-                        ),
-                      ),
-                    ]),
-                    if (state.city != null) ...[
-                      const SizedBox(height: 6),
-                      Row(children: [
-                        Icon(Icons.location_on_outlined, size: 13, color: LvColors.event),
-                        const SizedBox(width: 4),
-                        Text(state.city!.displayName,
-                            style: TextStyle(fontSize: 12, color: LvColors.event)),
-                      ]),
-                    ],
+                    _InputField(
+                      controller: _cityCtrl,
+                      hint: 'Hà Nội',
+                      t: t,
+                      onChanged: (_) {},
+                      onSubmitted: (v) {
+                        if (v.trim().isNotEmpty) vm.setCityDraft(v.trim());
+                        vm.submitCity();
+                      },
+                    ),
 
                     const SizedBox(height: 28),
 
@@ -224,8 +197,8 @@ class _OnboardingOverlayState extends ConsumerState<OnboardingOverlay> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          'Google chỉ dùng để đồng bộ lịch qua Drive (scope drive.appdata). Hồ sơ và sự kiện vẫn nằm ở máy bạn kể cả khi không kết nối.',
-                          style: TextStyle(fontSize: 11.5, height: 1.6, color: t.dim),
+                          'Google chỉ dùng để đồng bộ lịch qua Drive, Calendar. Hồ sơ và sự kiện vẫn nằm ở máy bạn kể cả khi không kết nối.',
+                          style: TextStyle(fontSize: 12, height: 1.6, color: t.dim),
                         ),
                       ),
                     ]),
@@ -306,7 +279,6 @@ class _InputField extends StatelessWidget {
     required this.onChanged,
     this.onSubmitted,
     this.initialValue,
-    this.centered = false,
   });
   final TextEditingController controller;
   final String hint;
@@ -314,7 +286,6 @@ class _InputField extends StatelessWidget {
   final ValueChanged<String> onChanged;
   final ValueChanged<String>? onSubmitted;
   final String? initialValue;
-  final bool centered;
 
   @override
   Widget build(BuildContext context) {
@@ -329,12 +300,10 @@ class _InputField extends StatelessWidget {
         borderRadius: BorderRadius.circular(LvColors.radiusMd),
         border: Border.all(color: t.divider),
       ),
-      alignment: Alignment.center,
       child: TextField(
         controller: controller,
         onChanged: onChanged,
         onSubmitted: onSubmitted,
-        textAlign: centered ? TextAlign.center : TextAlign.start,
         decoration: InputDecoration(
           hintText: hint,
           hintStyle: TextStyle(color: t.dim, fontSize: 14),

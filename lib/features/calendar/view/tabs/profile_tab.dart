@@ -238,7 +238,7 @@ class _ProfileTabState extends ConsumerState<ProfileTab> {
                 const SizedBox(height: 8),
                 Text('Kéo-thả file .ics vào đây', style: TextStyle(fontSize: 13.5, color: t.text)),
                 const SizedBox(height: 3),
-                Text(state.importMsg, style: TextStyle(fontSize: 11.5, color: t.dim)),
+                Text(state.importMsg, style: TextStyle(fontSize: 12, color: t.dim)),
               ],
             ),
           ),
@@ -327,7 +327,7 @@ class _ProfileTabState extends ConsumerState<ProfileTab> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Text(s2.syncMsg, style: TextStyle(fontSize: 11.5, color: t.dim)),
+                  Text(s2.syncMsg, style: TextStyle(fontSize: 12, color: t.dim)),
                   if (s2.gcalEvents.isNotEmpty) ...[
                     const SizedBox(height: 10),
                     GestureDetector(
@@ -352,7 +352,7 @@ class _ProfileTabState extends ConsumerState<ProfileTab> {
           const SizedBox(height: 16),
           Text(
             'Dữ liệu luôn được lưu trên máy. Google Drive chỉ chạy khi bạn kích hoạt — app đầy đủ chức năng khi chưa cấu hình hoặc đang offline.',
-            style: TextStyle(fontSize: 11.5, height: 1.65, color: t.dim),
+            style: TextStyle(fontSize: 12, height: 1.65, color: t.dim),
           ),
         ],
       ),
@@ -444,7 +444,7 @@ class _ProfileTabState extends ConsumerState<ProfileTab> {
                                 Padding(
                                   padding: const EdgeInsets.symmetric(vertical: 8),
                                   child: Text(headerLabel,
-                                      style: TextStyle(fontSize: 11, letterSpacing: 1.2, color: t.muted)),
+                                      style: TextStyle(fontSize: 12, letterSpacing: 1.2, color: t.muted)),
                                 ),
                               ],
                               Padding(
@@ -539,7 +539,7 @@ class _ProfileTabState extends ConsumerState<ProfileTab> {
   }
 
   Widget _sectionLabel(String label, LvTheme t) =>
-      Text(label, style: TextStyle(fontSize: 11, letterSpacing: 1.2, color: t.muted));
+      Text(label, style: TextStyle(fontSize: 12, letterSpacing: 1.2, color: t.muted));
 
   Widget _fieldLabel(String label, LvTheme t) =>
       Padding(padding: const EdgeInsets.only(bottom: 5),

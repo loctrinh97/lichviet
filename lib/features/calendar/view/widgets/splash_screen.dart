@@ -123,12 +123,12 @@ class _SplashOverlayState extends State<SplashOverlay> with SingleTickerProvider
                 children: [
                   Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Text('Phát triển bởi',
-                        style: TextStyle(fontSize: 10, letterSpacing: 1.4, color: t.dim)),
+                        style: TextStyle(fontSize: 12, letterSpacing: 1.4, color: t.dim)),
                     const SizedBox(height: 4),
                     Text('GP DIGITAL',
                         style: TextStyle(fontWeight: FontWeight.w500, fontSize: 15, letterSpacing: 0.6, color: t.text)),
                   ]),
-                  Text('v1.0', style: TextStyle(fontSize: 10.5, color: t.dim, fontFamily: 'monospace')),
+                  Text('v1.0', style: TextStyle(fontSize: 12, color: t.dim, fontFamily: 'monospace')),
                 ],
               ),
             ),
