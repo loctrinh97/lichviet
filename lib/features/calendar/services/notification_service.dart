@@ -42,8 +42,8 @@ class NotificationService {
   static Future<void> scheduleUpcoming(List<EventModel> events) async {
     await init();
     await _plugin.cancelAll();
-
     final now = DateTime.now();
+
     int id = 0;
 
     for (int i = 0; i < 30; i++) {
@@ -98,11 +98,43 @@ class NotificationService {
             UILocalNotificationDateInterpretation.absoluteTime,
       );
     }
+
+    await _scheduleRefreshReminder(now);
   }
 
   static String _dayLabel(DateTime d) {
     const days = ['Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy', 'Chủ Nhật'];
     return '${days[d.weekday - 1]}, ${d.day}/${d.month}';
+  }
+
+  /// Schedule a "refresh reminder" at day 28 so app reschedules before the 30-day window runs out.
+  static Future<void> _scheduleRefreshReminder(DateTime now) async {
+    final reminderDay = DateTime(now.year, now.month, now.day + 28, 9, 0);
+    if (reminderDay.isBefore(now)) return;
+    final tzTime = tz.TZDateTime.from(reminderDay, tz.local);
+    await _plugin.zonedSchedule(
+      9999,
+      'Mở Lịch Việt để cập nhật lịch',
+      'Nhắc nhở ngày lễ và sự kiện sắp hết hạn. Mở app để gia hạn thêm 30 ngày.',
+      tzTime,
+      NotificationDetails(
+        android: AndroidNotificationDetails(
+          _channel.id, _channel.name,
+          channelDescription: _channel.description,
+          importance: Importance.defaultImportance,
+          priority: Priority.defaultPriority,
+          icon: '@mipmap/ic_launcher',
+        ),
+        iOS: const DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: false,
+          presentSound: false,
+        ),
+      ),
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
+    );
   }
 
   static Future<void> cancelAll() => _plugin.cancelAll();
