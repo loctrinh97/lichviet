@@ -44,6 +44,10 @@ class AppViewModel extends BaseViewModel<AppState> {
 
   static const _prefObDone      = 'ob_done';
   static const _prefGoogleEmail = 'google_email';
+  static const _prefCityName    = 'city_name';
+  static const _prefCityAdmin   = 'city_admin';
+  static const _prefCityLat     = 'city_lat';
+  static const _prefCityLon     = 'city_lon';
   static const _prefTheme       = 'app_theme';
   static const _prefName        = 'profile_name';
   static const _prefBirthDate   = 'profile_birth_date';
@@ -58,6 +62,18 @@ class AppViewModel extends BaseViewModel<AppState> {
     // Restore theme
     final theme = prefs.getString(_prefTheme);
     if (theme != null) safeSetState(state.copyWith(theme: theme));
+
+    // Restore city
+    final cityName = prefs.getString(_prefCityName);
+    if (cityName != null) {
+      final city = WeatherCity(
+        name: cityName,
+        admin: prefs.getString(_prefCityAdmin) ?? '',
+        lat: prefs.getDouble(_prefCityLat) ?? 21.0285,
+        lon: prefs.getDouble(_prefCityLon) ?? 105.8542,
+      );
+      safeSetState(state.copyWith(city: () => city));
+    }
 
     // Show onboarding if first launch
     final obDone = prefs.getBool(_prefObDone) ?? false;
@@ -383,9 +399,18 @@ class AppViewModel extends BaseViewModel<AppState> {
         wxCached: false,
         cityDraft: '',
       ));
+      _saveCity(city);
     } catch (_) {
       safeSetState(state.copyWith(wxErr: 'Mất mạng. Đang xem bản cache lần cập nhật gần nhất.'));
     }
+  }
+
+  Future<void> _saveCity(WeatherCity city) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_prefCityName, city.name);
+    await prefs.setString(_prefCityAdmin, city.admin);
+    await prefs.setDouble(_prefCityLat, city.lat);
+    await prefs.setDouble(_prefCityLon, city.lon);
   }
 
   // ── Tử vi ──
