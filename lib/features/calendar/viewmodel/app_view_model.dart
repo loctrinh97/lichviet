@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 import '../services/drive_service.dart';
+import '../services/notification_service.dart';
 import '../model/event_model.dart';
 import '../model/profile_model.dart';
 import '../model/weather_model.dart';
@@ -36,6 +37,7 @@ class AppViewModel extends BaseViewModel<AppState> {
     WidgetService.updateWidget();
     _fetchWeather(const WeatherCity(name: 'Hà Nội', admin: '', lat: 21.0285, lon: 105.8542));
     _restoreSession();
+    NotificationService.scheduleUpcoming(const []);
 
     Future.delayed(const Duration(milliseconds: 2500), () {
       safeSetState(state.copyWith(splashVisible: false));
@@ -215,7 +217,9 @@ class AppViewModel extends BaseViewModel<AppState> {
       title: t,
       updatedAt: DateTime.now().millisecondsSinceEpoch,
     );
-    safeSetState(state.copyWith(events: [...state.events, ev], eventDraft: ''));
+    final updated = [...state.events, ev];
+    safeSetState(state.copyWith(events: updated, eventDraft: ''));
+    NotificationService.scheduleUpcoming(updated);
   }
 
   void deleteEvent(String id) {
@@ -224,6 +228,7 @@ class AppViewModel extends BaseViewModel<AppState> {
       return e;
     }).toList();
     safeSetState(state.copyWith(events: updated));
+    NotificationService.scheduleUpcoming(updated);
   }
 
   // ── Profile ──
@@ -484,6 +489,7 @@ class AppViewModel extends BaseViewModel<AppState> {
           events: merged,
           syncMsg: 'Đang ghi dữ liệu lên Drive…',
         ));
+        NotificationService.scheduleUpcoming(merged);
         await DriveService.upload(account, {
           'version': 1,
           'syncedAt': DateTime.now().toIso8601String(),
