@@ -34,7 +34,7 @@ class AppViewModel extends BaseViewModel<AppState> {
 
   void _init(DateTime now) {
     safeSetState(state.copyWith(events: const []));
-    WidgetService.updateWidget();
+    WidgetService.updateWidget(events: state.events);
     _fetchWeather(const WeatherCity(name: 'Hà Nội', admin: '', lat: 21.0285, lon: 105.8542));
     _restoreSession();
     NotificationService.scheduleUpcoming(const []);
@@ -166,7 +166,7 @@ class AppViewModel extends BaseViewModel<AppState> {
     safeSetState(state.copyWith(theme: theme));
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_prefTheme, theme);
-    WidgetService.updateWidget();
+    WidgetService.updateWidget(events: state.events);
   }
 
   Future<void> obDone() async {
@@ -514,6 +514,8 @@ class AppViewModel extends BaseViewModel<AppState> {
         syncState: SyncState.done,
         syncMsg: 'Đồng bộ lúc $timeStr · ${gcalEvents.length} sự kiện$driveNote',
       ));
+
+      WidgetService.updateWidget(events: [...state.events, ...gcalEvents]);
   }
 
   Future<void> disconnectGoogle() async {

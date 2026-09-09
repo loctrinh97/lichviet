@@ -258,16 +258,16 @@ class _ProfileTabState extends ConsumerState<ProfileTab> {
             ],
           ),
 
-          const SizedBox(height: 8),
-          _outlineBtn('🔔 Test notification (5 giây)', t, () async {
-            await NotificationService.sendTestNotification(seconds: 5);
-            if (!context.mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              content: const Text('Notification sẽ xuất hiện sau 5 giây — thoát app để thấy'),
-              backgroundColor: t.surface,
-              duration: const Duration(seconds: 4),
-            ));
-          }),
+          // const SizedBox(height: 8),
+          // _outlineBtn('🔔 Test notification (5 giây)', t, () async {
+          //   await NotificationService.sendTestNotification(seconds: 5);
+          //   if (!context.mounted) return;
+          //   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          //     content: const Text('Notification sẽ xuất hiện sau 5 giây — thoát app để thấy'),
+          //     backgroundColor: t.surface,
+          //     duration: const Duration(seconds: 4),
+          //   ));
+          // }),
 
           const SizedBox(height: 16),
           Consumer(builder: (ctx, ref2, _) {
