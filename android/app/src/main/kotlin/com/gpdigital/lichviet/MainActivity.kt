@@ -1,5 +1,7 @@
 package com.gpdigital.lichviet
 
+import android.app.AlarmManager
+import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Context
@@ -8,6 +10,7 @@ import android.util.Log
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
+import java.util.Calendar
 
 class MainActivity : FlutterActivity() {
     private val channel = "com.gpdigital.lichviet/widget"
@@ -19,10 +22,9 @@ class MainActivity : FlutterActivity() {
                 if (call.method == "updateWidget") {
                     val args = call.arguments as? Map<*, *>
                     Log.d("LichVietWidget", "updateWidget called, args=$args")
-                    if (args != null) {
-                        saveWidgetData(args)
-                    }
+                    if (args != null) saveWidgetData(args)
                     broadcastWidgetUpdate()
+                    scheduleMidnightRefresh()
                     result.success(null)
                 } else {
                     result.notImplemented()
@@ -33,15 +35,9 @@ class MainActivity : FlutterActivity() {
     private fun saveWidgetData(args: Map<*, *>) {
         val prefs = getSharedPreferences("LichVietWidget", Context.MODE_PRIVATE)
         prefs.edit().apply {
-            putString("solar_day",     args["solar_day"]?.toString()     ?: "")
-            putString("solar_weekday", args["solar_weekday"]?.toString() ?: "")
-            putString("lunar_day",     args["lunar_day"]?.toString()     ?: "")
-            putString("lunar_month",   args["lunar_month"]?.toString()   ?: "")
-            putString("can_chi_day",   args["can_chi_day"]?.toString()   ?: "")
-            putString("is_auspicious", args["is_auspicious"]?.toString() ?: "0")
-            putString("holiday",       args["holiday"]?.toString()       ?: "")
-            putString("widget_theme",    args["widget_theme"]?.toString()    ?: "dark")
-            putString("upcoming",  args["upcoming"]?.toString()  ?: "")
+            putString("widget_theme",   args["widget_theme"]?.toString()   ?: "dark")
+            putString("upcoming_label", args["upcoming_label"]?.toString() ?: "")
+            putString("upcoming_date",  args["upcoming_date"]?.toString()  ?: "")
             apply()
         }
     }
@@ -59,5 +55,30 @@ class MainActivity : FlutterActivity() {
             putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, ids)
         }
         sendBroadcast(intent)
+    }
+
+    // Schedule a daily alarm at 00:01 so widget refreshes date/countdown without opening app.
+    private fun scheduleMidnightRefresh() {
+        val alarmManager = getSystemService(ALARM_SERVICE) as AlarmManager
+        val intent = Intent(this, LichVietWidgetProvider::class.java).apply {
+            action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
+        }
+        val pending = PendingIntent.getBroadcast(
+            this, 0, intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val nextMidnight = Calendar.getInstance().apply {
+            add(Calendar.DAY_OF_YEAR, 1)
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 1)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        alarmManager.setRepeating(
+            AlarmManager.RTC,
+            nextMidnight.timeInMillis,
+            AlarmManager.INTERVAL_DAY,
+            pending
+        )
     }
 }

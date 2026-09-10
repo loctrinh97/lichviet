@@ -7,6 +7,7 @@ import android.util.Log
 import android.view.View
 import android.widget.RemoteViews
 import java.util.Calendar
+import java.util.concurrent.TimeUnit
 
 class LichVietWidgetProvider : AppWidgetProvider() {
 
@@ -25,24 +26,53 @@ class LichVietWidgetProvider : AppWidgetProvider() {
 
         fun updateWidget(context: Context, appWidgetManager: AppWidgetManager, widgetId: Int) {
             Log.d("LichVietWidget", "updateWidget called for id=$widgetId")
-            val cal = Calendar.getInstance()
+            val cal   = Calendar.getInstance()
             val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            Log.d("LichVietWidget", "prefs keys=${prefs.all.keys}")
 
             fun get(key: String, fallback: String) = prefs.getString(key, fallback) ?: fallback
 
-            val solarDay   = get("solar_day",     "${cal.get(Calendar.DAY_OF_MONTH)}")
-            val weekday    = get("solar_weekday", systemWeekday(cal))
-            val lunarDay   = get("lunar_day",     "--")
-            val lunarMonth = get("lunar_month",   "--")
-            val canChiDay  = get("can_chi_day",   "")
-            val isAusp    = get("is_auspicious", "0") == "1"
-            val holiday   = get("holiday",       "")
-            val upcoming  = get("upcoming",      "")
-            val isLight   = get("widget_theme",  "dark") == "light"
+            // Always compute from system clock — stays correct after midnight without opening app
+            val dd = cal.get(Calendar.DAY_OF_MONTH)
+            val mm = cal.get(Calendar.MONTH) + 1
+            val yy = cal.get(Calendar.YEAR)
+            val lunar     = LunarCalendar.solar2lunar(dd, mm, yy)
+            val solarDay  = "$dd"
+            val weekday   = systemWeekday(cal)
+            val lunarDay  = "${lunar.day}"
+            val lunarMonth= "${lunar.month}"
+            val canChiDay = LunarCalendar.canChiDay(lunar.jd)
+            val chiNgay   = LunarCalendar.chiDay(lunar.jd)
+            val isAusp    = LunarCalendar.ngayTot(lunar.month, chiNgay)
+            val holiday   = LunarCalendar.holiday(dd, mm, lunar.day, lunar.month, lunar.isLeap) ?: ""
+            val isLight    = get("widget_theme",  "dark") == "light"
+
+            // Recompute countdown from stored upcoming_date using today's system date
+            val upcomingLabel = get("upcoming_label", "")
+            val upcomingDate  = get("upcoming_date",  "")
+            val upcomingText  = if (upcomingLabel.isNotBlank() && upcomingDate.isNotBlank()) {
+                val parts = upcomingDate.split("-").mapNotNull { it.toIntOrNull() }
+                if (parts.size == 3) {
+                    val target = Calendar.getInstance().apply {
+                        set(parts[0], parts[1] - 1, parts[2], 0, 0, 0)
+                        set(Calendar.MILLISECOND, 0)
+                    }
+                    val today = Calendar.getInstance().apply {
+                        set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0)
+                        set(Calendar.SECOND, 0);      set(Calendar.MILLISECOND, 0)
+                    }
+                    val diffMs   = target.timeInMillis - today.timeInMillis
+                    val diffDays = TimeUnit.MILLISECONDS.toDays(diffMs).toInt()
+                    val countdown = when {
+                        diffDays <= 0 -> "Hôm nay"
+                        diffDays == 1 -> "Ngày mai"
+                        else          -> "$diffDays ngày nữa"
+                    }
+                    "$upcomingLabel · $countdown"
+                } else upcomingLabel
+            } else upcomingLabel
 
             val layout = if (isLight) R.layout.lich_viet_widget_light else R.layout.lich_viet_widget
-            val views = RemoteViews(context.packageName, layout)
+            val views  = RemoteViews(context.packageName, layout)
 
             val colorWeekday  = if (isLight) 0xFF75798C.toInt() else 0xFF9397AB.toInt()
             val colorSolarDay = if (isLight) 0xFF1C1D26.toInt() else 0xFFE9E9ED.toInt()
@@ -73,14 +103,14 @@ class LichVietWidgetProvider : AppWidgetProvider() {
                 views.setViewVisibility(R.id.widget_holiday, View.GONE)
             }
 
-            if (upcoming.isNotBlank()) {
-                views.setTextViewText(R.id.widget_upcoming_event, upcoming)
+            if (upcomingText.isNotBlank()) {
+                views.setTextViewText(R.id.widget_upcoming_event, upcomingText)
                 views.setViewVisibility(R.id.widget_upcoming_event, View.VISIBLE)
             } else {
                 views.setViewVisibility(R.id.widget_upcoming_event, View.GONE)
             }
 
-            Log.d("LichVietWidget", "Applying: solarDay=$solarDay weekday=$weekday lunar=$lunarText isLight=$isLight")
+            Log.d("LichVietWidget", "Applying: solarDay=$solarDay weekday=$weekday upcoming=$upcomingText")
             try {
                 appWidgetManager.updateAppWidget(widgetId, views)
                 Log.d("LichVietWidget", "updateAppWidget SUCCESS for id=$widgetId")
