@@ -38,6 +38,33 @@ class LichVietWidgetProvider : AppWidgetProvider() {
     // The midnight alarm, reboot and clock/timezone changes all arrive here with no widget ids,
     // which AppWidgetProvider.onReceive ignores — so refresh every placed widget ourselves.
     override fun onReceive(context: Context, intent: Intent) {
+        val pending = goAsync()
+        try {
+            handleReceive(context, intent)
+        } catch (e: Exception) {
+            Log.e("LichVietWidget", "onReceive failed: ${e.message}", e)
+        }
+        // Weather needs the network: fetch off the main thread, then redraw with the fresh data.
+        Thread {
+            try {
+                if (WidgetWeather.refreshIfStale(context)) {
+                    val manager = AppWidgetManager.getInstance(context)
+                    val ids = manager.getAppWidgetIds(ComponentName(context, LichVietWidgetProvider::class.java))
+                    for (id in ids) updateWidget(context, manager, id)
+                }
+            } finally {
+                pending.finish()
+            }
+        }.start()
+    }
+
+    override fun onAppWidgetOptionsChanged(
+        context: Context, appWidgetManager: AppWidgetManager, appWidgetId: Int, newOptions: android.os.Bundle
+    ) {
+        updateWidget(context, appWidgetManager, appWidgetId)
+    }
+
+    private fun handleReceive(context: Context, intent: Intent) {
         when (intent.action) {
             ACTION_REFRESH,
             Intent.ACTION_BOOT_COMPLETED,
@@ -197,6 +224,7 @@ class LichVietWidgetProvider : AppWidgetProvider() {
             }
 
             applyUserConfig(views, prefs)
+            applyWeather(context, views, prefs, appWidgetManager.getAppWidgetOptions(widgetId), isLight)
 
             val launchIntent = context.packageManager.getLaunchIntentForPackage(context.packageName)?.apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
@@ -239,6 +267,37 @@ class LichVietWidgetProvider : AppWidgetProvider() {
                 R.id.widget_auspicious to 11f, R.id.widget_holiday to 10f, R.id.widget_upcoming_event to 10f,
             )
             for ((id, base) in sizes) views.setTextViewTextSize(id, android.util.TypedValue.COMPLEX_UNIT_SP, base * k)
+        }
+
+        private const val WEATHER_MIN_WIDTH_DP = 160
+
+        /** Right-hand weather column: only when enabled, cached data exists and the widget is wide enough. */
+        private fun applyWeather(
+            context: Context, views: RemoteViews, prefs: android.content.SharedPreferences,
+            options: android.os.Bundle, isLight: Boolean
+        ) {
+            val widthDp = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 0)
+            val snap = WidgetWeather.cached(context)
+            if (!prefs.getBoolean("show_weather", true) || snap == null || widthDp < WEATHER_MIN_WIDTH_DP) {
+                views.setViewVisibility(R.id.widget_weather_col, View.GONE)
+                return
+            }
+            val k = when (prefs.getString("text_scale", "medium")) { "small" -> 0.85f; "large" -> 1.25f; else -> 1f }
+            val (emoji, desc) = WidgetWeather.describe(snap.code)
+            val textColor = if (isLight) 0xFF1C1D26.toInt() else 0xFFE9E9ED.toInt()
+            val mutedColor = if (isLight) 0xFF75798C.toInt() else 0xFF9397AB.toInt()
+            views.setViewVisibility(R.id.widget_weather_col, View.VISIBLE)
+            views.setTextViewText(R.id.widget_weather_icon, emoji)
+            views.setTextViewText(R.id.widget_weather_temp, "${snap.tempC}°")
+            views.setTextColor(R.id.widget_weather_temp, textColor)
+            views.setTextViewText(R.id.widget_weather_desc, desc)
+            views.setTextColor(R.id.widget_weather_desc, mutedColor)
+            views.setTextViewText(R.id.widget_weather_city, snap.city)
+            views.setTextColor(R.id.widget_weather_city, mutedColor)
+            views.setTextViewTextSize(R.id.widget_weather_icon, android.util.TypedValue.COMPLEX_UNIT_SP, 28f * k)
+            views.setTextViewTextSize(R.id.widget_weather_temp, android.util.TypedValue.COMPLEX_UNIT_SP, 18f * k)
+            views.setTextViewTextSize(R.id.widget_weather_desc, android.util.TypedValue.COMPLEX_UNIT_SP, 10f * k)
+            views.setTextViewTextSize(R.id.widget_weather_city, android.util.TypedValue.COMPLEX_UNIT_SP, 10f * k)
         }
 
         private fun systemWeekday(cal: Calendar): String {

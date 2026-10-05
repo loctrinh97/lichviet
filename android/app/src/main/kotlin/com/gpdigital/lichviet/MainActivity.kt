@@ -31,7 +31,16 @@ class MainActivity : FlutterActivity() {
 
     private fun saveWidgetData(args: Map<*, *>) {
         val prefs = getSharedPreferences("LichVietWidget", Context.MODE_PRIVATE)
+        val lat = args["weather_lat"]?.toString() ?: ""
+        val lon = args["weather_lon"]?.toString() ?: ""
+        // New location → drop the cache timestamp so the widget refetches right away.
+        val locationChanged = lat != prefs.getString("weather_lat", "") || lon != prefs.getString("weather_lon", "")
         prefs.edit().apply {
+            if (locationChanged) remove("weather_at")
+            putString("weather_lat", lat)
+            putString("weather_lon", lon)
+            putString("weather_city", args["weather_city"]?.toString() ?: "")
+            putBoolean("show_weather", args["show_weather"] as? Boolean ?: true)
             putString("widget_theme",   args["widget_theme"]?.toString()   ?: "dark")
             putString("upcoming_label", args["upcoming_label"]?.toString() ?: "")
             putString("upcoming_date",  args["upcoming_date"]?.toString()  ?: "")
