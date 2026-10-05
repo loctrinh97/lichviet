@@ -1,8 +1,12 @@
 package com.gpdigital.lichviet
 
+import android.app.AlarmManager
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
+import android.app.PendingIntent
+import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
 import android.util.Log
 import android.view.View
 import android.widget.RemoteViews
@@ -19,10 +23,80 @@ class LichVietWidgetProvider : AppWidgetProvider() {
         for (id in appWidgetIds) {
             updateWidget(context, appWidgetManager, id)
         }
+        scheduleNextMidnight(context)
+    }
+
+    override fun onEnabled(context: Context) {
+        scheduleNextMidnight(context)
+    }
+
+    override fun onDisabled(context: Context) {
+        val am = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        am.cancel(refreshPendingIntent(context))
+    }
+
+    // The midnight alarm, reboot and clock/timezone changes all arrive here with no widget ids,
+    // which AppWidgetProvider.onReceive ignores — so refresh every placed widget ourselves.
+    override fun onReceive(context: Context, intent: Intent) {
+        when (intent.action) {
+            ACTION_REFRESH,
+            Intent.ACTION_BOOT_COMPLETED,
+            Intent.ACTION_MY_PACKAGE_REPLACED,
+            Intent.ACTION_DATE_CHANGED,
+            Intent.ACTION_TIME_CHANGED,
+            Intent.ACTION_TIMEZONE_CHANGED -> {
+                val manager = AppWidgetManager.getInstance(context)
+                val ids = manager.getAppWidgetIds(ComponentName(context, LichVietWidgetProvider::class.java))
+                if (ids.isNotEmpty()) onUpdate(context, manager, ids)
+            }
+            else -> super.onReceive(context, intent)
+        }
     }
 
     companion object {
         private const val PREFS = "LichVietWidget"
+        private const val ACTION_REFRESH = "com.gpdigital.lichviet.WIDGET_REFRESH"
+
+        private fun refreshPendingIntent(context: Context): PendingIntent =
+            PendingIntent.getBroadcast(
+                context, 0,
+                Intent(context, LichVietWidgetProvider::class.java).setAction(ACTION_REFRESH),
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+
+        /** Arms a one-shot alarm for the next 00:01; every refresh re-arms it. */
+        fun scheduleNextMidnight(context: Context) {
+            val am = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+            val next = Calendar.getInstance().apply {
+                add(Calendar.DAY_OF_YEAR, 1)
+                set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 1)
+                set(Calendar.SECOND, 0);      set(Calendar.MILLISECOND, 0)
+            }.timeInMillis
+            val pending = refreshPendingIntent(context)
+            try {
+                if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.S || am.canScheduleExactAlarms()) {
+                    am.setExactAndAllowWhileIdle(AlarmManager.RTC, next, pending)
+                } else {
+                    am.setAndAllowWhileIdle(AlarmManager.RTC, next, pending)
+                }
+            } catch (e: SecurityException) {
+                am.setAndAllowWhileIdle(AlarmManager.RTC, next, pending)
+            }
+        }
+
+        /** Next holiday / mùng 1 / rằm within 30 days from [from] (user events live only in the app). */
+        private fun findUpcoming(from: Calendar): Pair<String, Calendar>? {
+            for (i in 0 until 30) {
+                val d = (from.clone() as Calendar).apply { add(Calendar.DAY_OF_YEAR, i) }
+                val dd = d.get(Calendar.DAY_OF_MONTH)
+                val mm = d.get(Calendar.MONTH) + 1
+                val al = LunarCalendar.solar2lunar(dd, mm, d.get(Calendar.YEAR))
+                LunarCalendar.holiday(dd, mm, al.day, al.month, al.isLeap)?.let { return it to d }
+                if (al.day == 1) return "Mùng 1 âm lịch" to d
+                if (al.day == 15) return "Ngày Rằm" to d
+            }
+            return null
+        }
 
         fun updateWidget(context: Context, appWidgetManager: AppWidgetManager, widgetId: Int) {
             Log.d("LichVietWidget", "updateWidget called for id=$widgetId")
@@ -47,8 +121,20 @@ class LichVietWidgetProvider : AppWidgetProvider() {
             val isLight    = get("widget_theme",  "dark") == "light"
 
             // Recompute countdown from stored upcoming_date using today's system date
-            val upcomingLabel = get("upcoming_label", "")
-            val upcomingDate  = get("upcoming_date",  "")
+            var upcomingLabel = get("upcoming_label", "")
+            var upcomingDate  = get("upcoming_date",  "")
+
+            // Stored event already passed (app not opened for days) → recompute natively.
+            val storedParts = upcomingDate.split("-").mapNotNull { it.toIntOrNull() }
+            val stale = storedParts.size != 3 || Calendar.getInstance().apply {
+                set(storedParts[0], storedParts[1] - 1, storedParts[2], 23, 59, 59)
+            }.before(cal)
+            if (stale) {
+                findUpcoming(cal)?.let { (label, d) ->
+                    upcomingLabel = label
+                    upcomingDate  = "${d.get(Calendar.YEAR)}-${d.get(Calendar.MONTH) + 1}-${d.get(Calendar.DAY_OF_MONTH)}"
+                }
+            }
             val upcomingText  = if (upcomingLabel.isNotBlank() && upcomingDate.isNotBlank()) {
                 val parts = upcomingDate.split("-").mapNotNull { it.toIntOrNull() }
                 if (parts.size == 3) {
@@ -110,6 +196,19 @@ class LichVietWidgetProvider : AppWidgetProvider() {
                 views.setViewVisibility(R.id.widget_upcoming_event, View.GONE)
             }
 
+            applyUserConfig(views, prefs)
+
+            val launchIntent = context.packageManager.getLaunchIntentForPackage(context.packageName)?.apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
+            }
+            if (launchIntent != null) {
+                val pending = PendingIntent.getActivity(
+                    context, 0, launchIntent,
+                    PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+                )
+                views.setOnClickPendingIntent(R.id.widget_root, pending)
+            }
+
             Log.d("LichVietWidget", "Applying: solarDay=$solarDay weekday=$weekday upcoming=$upcomingText")
             try {
                 appWidgetManager.updateAppWidget(widgetId, views)
@@ -117,6 +216,29 @@ class LichVietWidgetProvider : AppWidgetProvider() {
             } catch (e: Exception) {
                 Log.e("LichVietWidget", "updateAppWidget FAILED: ${e.message}", e)
             }
+        }
+
+        /** User customisation from the app's widget settings screen: hidden rows and text size. */
+        private fun applyUserConfig(views: RemoteViews, prefs: android.content.SharedPreferences) {
+            fun show(key: String) = prefs.getBoolean(key, true)
+            if (!show("show_weekday"))    views.setViewVisibility(R.id.widget_weekday, View.GONE)
+            if (!show("show_lunar"))      views.setViewVisibility(R.id.widget_lunar, View.GONE)
+            if (!show("show_auspicious")) views.setViewVisibility(R.id.widget_auspicious, View.GONE)
+            if (!show("show_events")) {
+                views.setViewVisibility(R.id.widget_holiday, View.GONE)
+                views.setViewVisibility(R.id.widget_upcoming_event, View.GONE)
+            }
+
+            val k = when (prefs.getString("text_scale", "medium")) {
+                "small" -> 0.85f
+                "large" -> 1.25f
+                else    -> 1f
+            }
+            val sizes = mapOf(
+                R.id.widget_weekday to 11f, R.id.widget_solar_day to 28f, R.id.widget_lunar to 11f,
+                R.id.widget_auspicious to 11f, R.id.widget_holiday to 10f, R.id.widget_upcoming_event to 10f,
+            )
+            for ((id, base) in sizes) views.setTextViewTextSize(id, android.util.TypedValue.COMPLEX_UNIT_SP, base * k)
         }
 
         private fun systemWeekday(cal: Calendar): String {

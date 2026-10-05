@@ -4,4 +4,5 @@ abstract final class AppRoutes {
   static const home = '/home';
   static const forgotPassword = '/forgot-password';
   static const lichViet = '/lich-viet';
+  static const widgetSettings = '/widget-settings';
 }

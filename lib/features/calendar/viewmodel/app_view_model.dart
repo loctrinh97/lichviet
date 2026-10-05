@@ -10,6 +10,7 @@ import '../services/notification_service.dart';
 import '../model/event_model.dart';
 import '../model/profile_model.dart';
 import '../model/weather_model.dart';
+import '../model/widget_config.dart';
 import '../services/widget_service.dart';
 import '../state/app_state.dart';
 import '../../../core/base/base_view_model.dart';
@@ -64,6 +65,7 @@ class AppViewModel extends BaseViewModel<AppState> {
     // Restore theme
     final theme = prefs.getString(_prefTheme);
     if (theme != null) safeSetState(state.copyWith(theme: theme));
+    safeSetState(state.copyWith(widgetConfig: WidgetConfig.decode(prefs.getString(WidgetConfig.prefKey))));
 
     // Restore city
     final cityName = prefs.getString(_prefCityName);
@@ -167,6 +169,13 @@ class AppViewModel extends BaseViewModel<AppState> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_prefTheme, theme);
     WidgetService.updateWidget(events: state.events);
+  }
+
+  Future<void> setWidgetConfig(WidgetConfig config) async {
+    safeSetState(state.copyWith(widgetConfig: config));
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(WidgetConfig.prefKey, config.encode());
+    WidgetService.updateWidget(events: [...state.events, ...state.gcalEvents]);
   }
 
   Future<void> obDone() async {

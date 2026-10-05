@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../features/auth/view/login_screen.dart';
 import '../../features/calendar/view/home_screen.dart';
+import '../../features/calendar/view/widget_settings_screen.dart';
 import 'app_routes.dart';
 
 class AppRouter {
@@ -10,6 +11,8 @@ class AppRouter {
     switch (settings.name) {
       case AppRoutes.login:
         return _page(const LoginScreen());
+      case AppRoutes.widgetSettings:
+        return _page(const WidgetSettingsScreen());
       case AppRoutes.lichViet:
         return _page(const HomeScreen());
       default:

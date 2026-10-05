@@ -6,6 +6,7 @@ import '../../services/lunar_calendar.dart';
 import '../../services/astrology.dart';
 import '../../state/app_state.dart';
 import '../../viewmodel/app_view_model.dart' hide TimeOfDay;
+import '../../../../core/navigation/app_routes.dart';
 import '../app_colors_ext.dart';
 
 class ProfileTab extends ConsumerStatefulWidget {
@@ -198,6 +199,16 @@ class _ProfileTabState extends ConsumerState<ProfileTab> {
               theme: t, compact: true,
             ),
           ),
+          const SizedBox(height: 12),
+          _settingRow('Widget màn hình chính', t,
+            trailing: GestureDetector(
+              onTap: () => Navigator.of(context).pushNamed(AppRoutes.widgetSettings),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                Text('Tuỳ chỉnh', style: TextStyle(fontSize: 13.5, color: t.muted)),
+                const SizedBox(width: 4),
+                Icon(Icons.chevron_right, size: 18, color: t.accent),
+              ]),
+            )),
           const SizedBox(height: 12),
           _settingRow('Ngôn ngữ', t, trailing: Text('Tiếng Việt', style: TextStyle(fontSize: 13.5, color: t.muted))),
           const SizedBox(height: 12),

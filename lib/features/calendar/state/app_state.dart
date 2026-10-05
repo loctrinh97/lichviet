@@ -1,6 +1,7 @@
 import '../model/event_model.dart';
 import '../model/weather_model.dart';
 import '../model/profile_model.dart';
+import '../model/widget_config.dart';
 
 enum AppTab { calendar, weather, astrology, profile }
 
@@ -32,6 +33,7 @@ class AppState {
   final String? googleEmail;
   final bool splashVisible;
   final bool obVisible;
+  final WidgetConfig widgetConfig;
 
   const AppState({
     this.theme = 'dark',
@@ -59,6 +61,7 @@ class AppState {
     this.googleEmail,
     this.splashVisible = true,
     this.obVisible = false,
+    this.widgetConfig = const WidgetConfig(),
   });
 
   AppState copyWith({
@@ -87,6 +90,7 @@ class AppState {
     String? Function()? googleEmail,
     bool? splashVisible,
     bool? obVisible,
+    WidgetConfig? widgetConfig,
   }) {
     return AppState(
       theme: theme ?? this.theme,
@@ -114,6 +118,7 @@ class AppState {
       googleEmail: googleEmail != null ? googleEmail() : this.googleEmail,
       splashVisible: splashVisible ?? this.splashVisible,
       obVisible: obVisible ?? this.obVisible,
+      widgetConfig: widgetConfig ?? this.widgetConfig,
     );
   }
 }

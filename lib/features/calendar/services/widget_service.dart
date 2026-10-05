@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../model/event_model.dart';
+import '../model/widget_config.dart';
 import 'lunar_calendar.dart';
 
 const _androidWidgetClass = 'com.gpdigital.lichviet.LichVietWidgetProvider';
@@ -14,7 +15,8 @@ class WidgetService {
     final today = DateTime(now.year, now.month, now.day);
 
     final prefs = await SharedPreferences.getInstance();
-    final storedTheme = prefs.getString('app_theme') ?? 'dark';
+    final appTheme = prefs.getString('app_theme') ?? 'dark';
+    final config = WidgetConfig.decode(prefs.getString(WidgetConfig.prefKey));
 
     final upcoming = _findUpcoming(today, events);
 
@@ -22,7 +24,12 @@ class WidgetService {
       try {
         await _channel.invokeMethod('updateWidget', {
           'providerClass':  _androidWidgetClass,
-          'widget_theme':   storedTheme,
+          'widget_theme':   config.resolveTheme(appTheme),
+          'show_weekday':   config.showWeekday,
+          'show_lunar':     config.showLunar,
+          'show_auspicious': config.showAuspicious,
+          'show_events':    config.showEvents,
+          'text_scale':     config.textScale.key,
           'upcoming_label': upcoming?.label ?? '',
           // "yyyy-M-d" — widget recomputes countdown from system clock each day
           'upcoming_date':  upcoming != null ? EventModel.dateKey(upcoming.date) : '',
