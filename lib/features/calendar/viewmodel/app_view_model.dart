@@ -429,6 +429,7 @@ class AppViewModel extends BaseViewModel<AppState> {
     await prefs.setString(_prefCityAdmin, city.admin);
     await prefs.setDouble(_prefCityLat, city.lat);
     await prefs.setDouble(_prefCityLon, city.lon);
+    WidgetService.updateWidget(events: [...state.events, ...state.gcalEvents]);
   }
 
   // ── Tử vi ──

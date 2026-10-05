@@ -18,6 +18,19 @@ class WeatherData {
   Map<String, dynamic>? get daily => raw['daily'] as Map<String, dynamic>?;
 }
 
+/// Emoji for a WMO weather code — mirrors WidgetWeather.describe() in the Android widget.
+String weatherEmoji(int code) {
+  if (code == 0) return '☀️';
+  if (code == 1) return '🌤️';
+  if (code == 2) return '⛅';
+  if (code == 45 || code == 48) return '🌫️';
+  if (const {51, 53, 55}.contains(code)) return '🌦️';
+  if (const {61, 63, 65, 66, 67, 80, 81, 82}.contains(code)) return '🌧️';
+  if (const {71, 73, 75, 77, 85, 86}.contains(code)) return '❄️';
+  if (const {95, 96, 99}.contains(code)) return '⛈️';
+  return '☁️';
+}
+
 class WeatherDescIcon {
   final String desc;
   final String icon; // phosphor icon name e.g. 'ph-sun'

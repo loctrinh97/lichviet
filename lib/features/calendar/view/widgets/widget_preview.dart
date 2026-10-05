@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
+import '../../model/weather_model.dart';
 import '../../model/widget_config.dart';
 import '../../services/lunar_calendar.dart';
 
 /// Flutter mock of the native home-screen widget, driven by [WidgetConfig].
 /// Colours and base sizes mirror LichVietWidgetProvider.kt / lich_viet_widget*.xml.
 class WidgetPreview extends StatelessWidget {
-  const WidgetPreview({super.key, required this.config, required this.appTheme});
+  const WidgetPreview({super.key, required this.config, required this.appTheme, this.weather, this.cityName});
   final WidgetConfig config;
   final String appTheme;
+  final WeatherData? weather;
+  final String? cityName;
 
   @override
   Widget build(BuildContext context) {
@@ -36,22 +39,42 @@ class WidgetPreview extends StatelessWidget {
         );
 
     return Container(
-      width: 220,
+      width: 280,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: isLight ? const Color(0xE8F5F5FA) : const Color(0xCC161826),
         borderRadius: BorderRadius.circular(16),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          if (config.showWeekday) line(weekday, 11, cWeekday, upper: true),
-          line('${now.day}', 28, cSolar, bold: true),
-          if (config.showLunar) line('Âm ${al.day}/${al.month} · ${cc.day}', 11, cAccent),
-          if (config.showAuspicious) line(isAusp ? 'Hoàng đạo' : 'Hắc đạo', 11, isAusp ? cAccent : cAuspNo),
-          if (config.showEvents && holidays.isNotEmpty) line(holidays.first.name, 10, cHoliday),
-          if (config.showEvents) line('Sự kiện sắp tới · 3 ngày nữa', 10, const Color(0xFF27AE82)),
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (config.showWeekday) line(weekday, 11, cWeekday, upper: true),
+                line('${now.day}', 28, cSolar, bold: true),
+                if (config.showLunar) line('Âm ${al.day}/${al.month} · ${cc.day}', 11, cAccent),
+                if (config.showAuspicious) line(isAusp ? 'Hoàng đạo' : 'Hắc đạo', 11, isAusp ? cAccent : cAuspNo),
+                if (config.showEvents && holidays.isNotEmpty) line(holidays.first.name, 10, cHoliday),
+                if (config.showEvents) line('Sự kiện sắp tới · 3 ngày nữa', 10, const Color(0xFF27AE82)),
+              ],
+            ),
+          ),
+          if (config.showWeather && weather?.current != null) ...[
+            const SizedBox(width: 8),
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(weatherEmoji((weather!.current!['weather_code'] as num).toInt()),
+                    style: TextStyle(fontSize: 28 * k)),
+                line('${(weather!.current!['temperature_2m'] as num).round()}°', 18, cSolar, bold: true),
+                line(WeatherDescIcon.fromCode((weather!.current!['weather_code'] as num).toInt()).desc, 10, cWeekday),
+                if (cityName != null) line(cityName!, 10, cWeekday),
+              ],
+            ),
+          ],
         ],
       ),
     );

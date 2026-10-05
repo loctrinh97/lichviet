@@ -35,6 +35,7 @@ class WidgetConfig {
   final bool showLunar;
   final bool showAuspicious;
   final bool showEvents; // today's holiday + upcoming event rows
+  final bool showWeather;
   final WidgetTextScale textScale;
   final WidgetThemeMode themeMode;
 
@@ -43,6 +44,7 @@ class WidgetConfig {
     this.showLunar = true,
     this.showAuspicious = true,
     this.showEvents = true,
+    this.showWeather = true,
     this.textScale = WidgetTextScale.medium,
     this.themeMode = WidgetThemeMode.app,
   });
@@ -52,6 +54,7 @@ class WidgetConfig {
     bool? showLunar,
     bool? showAuspicious,
     bool? showEvents,
+    bool? showWeather,
     WidgetTextScale? textScale,
     WidgetThemeMode? themeMode,
   }) =>
@@ -60,6 +63,7 @@ class WidgetConfig {
         showLunar: showLunar ?? this.showLunar,
         showAuspicious: showAuspicious ?? this.showAuspicious,
         showEvents: showEvents ?? this.showEvents,
+        showWeather: showWeather ?? this.showWeather,
         textScale: textScale ?? this.textScale,
         themeMode: themeMode ?? this.themeMode,
       );
@@ -73,6 +77,7 @@ class WidgetConfig {
         'showLunar': showLunar,
         'showAuspicious': showAuspicious,
         'showEvents': showEvents,
+        'showWeather': showWeather,
         'textScale': textScale.key,
         'themeMode': themeMode.key,
       };
@@ -82,6 +87,7 @@ class WidgetConfig {
         showLunar: j['showLunar'] as bool? ?? true,
         showAuspicious: j['showAuspicious'] as bool? ?? true,
         showEvents: j['showEvents'] as bool? ?? true,
+        showWeather: j['showWeather'] as bool? ?? true,
         textScale: WidgetTextScale.fromKey(j['textScale'] as String?),
         themeMode: WidgetThemeMode.fromKey(j['themeMode'] as String?),
       );

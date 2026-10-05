@@ -29,6 +29,11 @@ class WidgetService {
           'show_lunar':     config.showLunar,
           'show_auspicious': config.showAuspicious,
           'show_events':    config.showEvents,
+          'show_weather':   config.showWeather,
+          // Native side fetches current weather itself so the widget stays fresh without opening the app.
+          'weather_lat':    (prefs.getDouble('city_lat') ?? 21.0285).toString(),
+          'weather_lon':    (prefs.getDouble('city_lon') ?? 105.8542).toString(),
+          'weather_city':   prefs.getString('city_name') ?? 'Hà Nội',
           'text_scale':     config.textScale.key,
           'upcoming_label': upcoming?.label ?? '',
           // "yyyy-M-d" — widget recomputes countdown from system clock each day
